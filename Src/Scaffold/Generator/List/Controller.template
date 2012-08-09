@@ -1,0 +1,35 @@
+﻿using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Transactions;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+
+namespace @(Model.WebNamespace).Controllers
+{
+    public class @(Model.ListName)Controller : AbstractController
+    {
+        private const int PageSize = 10;
+
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository;
+
+        public @(Model.ListName)Controller(I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository)
+        {
+            this.@(Model.Entity.VariableName)Repository = @(Model.Entity.VariableName)Repository;
+        }
+
+		[Transaction]
+        public virtual ActionResult Index(int? page, GridSortOptions sort)
+        {
+            var @(Model.Entity.VariableName)s = @(Model.Entity.VariableName)Repository.FindPage(page ?? 1, PageSize, sort.Column, sort.Direction == SortDirection.Ascending ? SortOrder.Ascending: SortOrder.Descending);
+
+            var @(Model.Entity.VariableName)ViewModels = Map<Page<@(Model.Entity.Name)>, IPagination<@(Model.Entity.Name)ViewModel>>(@(Model.Entity.VariableName)s);
+            ViewData["sort"] = sort;
+
+            return View(@(Model.Entity.VariableName)ViewModels);
+        }
+    }
+}

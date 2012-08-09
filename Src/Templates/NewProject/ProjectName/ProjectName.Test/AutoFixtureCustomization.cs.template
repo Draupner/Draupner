@@ -1,0 +1,11 @@
+using Ploeh.AutoFixture;
+
+namespace @(Model.TestNamespace)
+{
+    public class AutoFixtureCustomization : ICustomization
+    {
+        public void Customize(IFixture fixture)
+        {
+        }
+    }
+}

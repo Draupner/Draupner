@@ -1,0 +1,25 @@
+﻿using FluentNHibernate.Testing;
+using Ploeh.AutoFixture;
+using Blah.Core.Domain.Model;
+using Xunit;
+
+namespace Blah.Test.Common.NHibernate
+{
+    public class UserPersistenceTests : PersistenceTest
+    {
+        private readonly Fixture fixture;
+
+        public UserPersistenceTests()
+        {
+            fixture = new Fixture();
+        }
+
+        [Fact]
+        public void CanCorrectlyMapUser()
+        {
+            var user = fixture.Build<User>().Without(x => x.Roles).CreateAnonymous();
+            new PersistenceSpecification<User>(UnitOfWorkSession)
+                .VerifyTheMappings(user);
+        }         
+    }
+}

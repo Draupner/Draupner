@@ -1,0 +1,17 @@
+﻿using @(Model.CoreNamespace).Domain.Model;
+using FluentNHibernate.Mapping;
+
+namespace @(Model.CoreNamespace).Common.NHibernate
+{
+    public class RoleMap : ClassMap<Role>
+    {
+        public RoleMap()
+        {
+            Id(x => x.Id).GeneratedBy.Identity();
+            Map(x => x.Name);
+            HasManyToMany(x => x.Users)
+                .Cascade.All()
+                .Inverse();
+        }
+    }
+}

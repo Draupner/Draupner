@@ -1,0 +1,89 @@
+﻿using System;
+using System.Collections.Generic;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Persistence.NHibernate;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+using NHibernate.Criterion;
+
+namespace Blah.Core.Repositories
+{
+    public class UserRepository : GenericNHibernateRepository<User>, IUserRepository
+    {
+
+        public UserRepository(IUnitOfWork unitOfWork) : base((NHibernateUnitOfWork)unitOfWork)
+        {
+        }
+
+        public User FindByUserName(string userName)
+        {
+            var user = Session.QueryOver<User>()
+                .Where(u => u.UserName == userName)
+                .SingleOrDefault();
+
+            return user;
+        }
+
+        public string FindUserNameByEmail(string email)
+        {
+            var user = Session.QueryOver<User>()
+                .Where(u => u.Email == email)
+                .Take(1)
+                .SingleOrDefault();
+
+            if (user != null)
+            {
+                return user.UserName;
+            }
+            return String.Empty;
+        }
+
+        public Page<User> FindUsersByEmail(string emailToMatch, int pageNumber, int pageSize)
+        {
+            var queryOver = Session.QueryOver<User>();
+            var users = queryOver
+                .WhereRestrictionOn(c => c.Email).IsInsensitiveLike("%" + emailToMatch + "%")
+                .Take(pageSize)
+                .Skip((pageNumber - 1) * pageSize)
+                .Future();
+            var total = queryOver
+                .ToRowCountQuery()
+                .WhereRestrictionOn(c => c.Email).IsInsensitiveLike("%" + emailToMatch + "%")
+                .FutureValue<int>().Value;
+
+            return new Page<User>(users, pageNumber, pageSize, total);
+        }
+
+        public Page<User> FindUsersByUserName(string userNameToMatch, int pageNumber, int pageSize)
+        {
+            var queryOver = Session.QueryOver<User>();
+
+            var users = queryOver
+                .WhereRestrictionOn(c => c.UserName).IsInsensitiveLike("%" + userNameToMatch + "%")
+                .Take(pageSize)
+                .Skip((pageNumber - 1) * pageSize)
+                .Future();
+            var total = queryOver
+                .ToRowCountQuery()
+                .WhereRestrictionOn(c => c.UserName).IsInsensitiveLike("%" + userNameToMatch + "%")
+                .FutureValue<int>().Value;
+
+            return new Page<User>(users, pageNumber, pageSize, total);
+        }
+
+        public IList<User> FindUsersContainingUserNameAndHavingRole(string usernameToMatch, Role role)
+        {
+            User user = null;
+            User joinedUser = null;
+            var users = Session.QueryOver(() => user)
+                .WhereRestrictionOn(c => c.UserName).IsInsensitiveLike("%" + usernameToMatch + "%")
+                .WithSubquery.WhereExists(QueryOver.Of<Role>()
+                    .Where(x => x.Id == role.Id)
+                    .JoinAlias(x => x.Users, () => joinedUser )
+                    .Where(x => joinedUser.Id == user.Id)
+                    .Select(x => x.Id))
+                .List();
+            return users;
+        }
+    }
+}

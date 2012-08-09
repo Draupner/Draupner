@@ -1,0 +1,226 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+using Blah.Web.Common.AutoMapper;
+using Blah.Web.Controllers;
+using Blah.Web.Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+using Xunit;
+using Ploeh.AutoFixture;
+using Rhino.Mocks;
+
+namespace Blah.Test.Controllers
+{
+    public class BookControllerTests
+    {
+        private readonly MockRepository mocks;
+        private readonly IBookRepository bookRepositoryMock;
+        private readonly BookController controller;
+        private readonly IFixture fixture;
+        private readonly AutoMapperConfiguration autoMapperConfiguration;
+
+        public BookControllerTests()
+        {
+            autoMapperConfiguration = new AutoMapperConfiguration();
+            autoMapperConfiguration.Configure();
+            fixture = new Fixture().Customize(new AutoFixtureCustomization());
+
+            mocks = new MockRepository();
+            bookRepositoryMock = mocks.DynamicMock<IBookRepository>();
+            controller = new BookController(bookRepositoryMock);
+        }
+
+        [Fact]
+        public void ShouldGetIndex()
+        {
+            var page = new Page<Book>(new List<Book> { new Book(), new Book() }, 5, 10, 100);
+            Expect.Call(bookRepositoryMock.FindPage(5, 10, "Id", SortOrder.Ascending)).Return(page);
+
+            mocks.ReplayAll();
+
+            var sortOptions = new GridSortOptions { Column = "Id", Direction = SortDirection.Ascending };
+            var result = controller.Index(5, sortOptions) as ViewResult;
+            
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+
+            var pagination = (IPagination<BookViewModel>)result.Model;
+            Assert.Equal(5, pagination.PageNumber);
+            Assert.Equal(10, pagination.PageSize);
+            Assert.Equal(100, pagination.TotalItems);
+            Assert.Equal(2, pagination.Count());
+
+            Assert.Equal(result.ViewData["sort"], sortOptions);
+        }
+
+        [Fact]
+        public void ShouldGetDetails()
+        {
+            var book = fixture.CreateAnonymous<Book>();
+            Expect.Call(bookRepositoryMock.Get(42)).Return(book);
+
+            mocks.ReplayAll();
+
+            var result = controller.Details(42);
+
+            mocks.VerifyAll();
+
+            Assert.Equal(book.Id, ((BookViewModel)result.Model).Id);
+        }
+
+        [Fact]
+        public void ShouldGetDetailsWhereNotFound()
+        {
+            Expect.Call(bookRepositoryMock.Get(42)).Return(null);
+
+            mocks.ReplayAll();
+
+            var result = controller.Details(42);
+
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldGetCreate()
+        {
+            mocks.ReplayAll();
+
+            var result = controller.Create();
+
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(BookViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldPostCreate()
+        {
+            var bookViewModel = new BookViewModel();
+
+            Expect.Call(() => bookRepositoryMock.Add(Arg<Book>.Is.Anything));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Create(bookViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostCreateWhereNotValid()
+        {
+            var bookViewModel = new BookViewModel();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Create(bookViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(bookViewModel, result.Model);
+        }
+
+        [Fact]
+        public void ShouldGetEdit()
+        {
+            var book = new Book();
+            Expect.Call(bookRepositoryMock.Get(12)).Return(book);
+
+            mocks.ReplayAll();
+            var result = controller.Edit(12);
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(BookViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldGetEditWhereNotFound()
+        {
+            Expect.Call(bookRepositoryMock.Get(12)).Return(null);
+
+            mocks.ReplayAll();
+            var result = controller.Edit(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldPostEdit()
+        {
+            var bookViewModel = fixture.CreateAnonymous<BookViewModel>();
+            var book = fixture.CreateAnonymous<Book>();
+
+            Expect.Call(bookRepositoryMock.Get(bookViewModel.Id)).Return(book);
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Edit(bookViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+			
+            Assert.Equal(bookViewModel.Name, book.Name);
+        }
+
+        [Fact]
+        public void ShouldNotDoEditWhenNotValid()
+        {
+            var bookViewModel = fixture.CreateAnonymous<BookViewModel>();
+
+            Expect.Call(bookRepositoryMock.Get(0)).IgnoreArguments().Repeat.Never();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Edit(bookViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(bookViewModel, result.Model);
+        }
+
+        [Fact]
+        public void ShouldNotDoEditWhenNotFound()
+        {
+            var bookViewModel = fixture.CreateAnonymous<BookViewModel>();
+
+            Expect.Call(bookRepositoryMock.Get(bookViewModel.Id)).Return(null);
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Edit(bookViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldPostDelete()
+        {
+            var book = new Book();
+            Expect.Call(bookRepositoryMock.Get(12)).Return(book);
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Delete(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostDeleteWhereNotFound()
+        {
+            Expect.Call(bookRepositoryMock.Get(12)).Return(null);
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Delete(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+    }
+}

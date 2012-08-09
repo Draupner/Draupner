@@ -1,0 +1,9 @@
+﻿using Castle.Windsor;
+
+namespace @(Model.CoreNamespace).Common.Windsor
+{
+    public class Ioc
+    {
+        public static IWindsorContainer Container;
+    }
+}

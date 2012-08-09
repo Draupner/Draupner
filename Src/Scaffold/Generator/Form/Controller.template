@@ -1,0 +1,41 @@
+﻿using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Transactions;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Models;
+
+
+namespace @(Model.WebNamespace).Controllers
+{
+    public class @(Model.FormName)Controller : AbstractController
+    {
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository;
+
+        public @(Model.FormName)Controller(I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository)
+        {
+            this.@(Model.Entity.VariableName)Repository = @(Model.Entity.VariableName)Repository;
+        }
+
+		[Transaction]
+        public virtual ViewResult Index()
+        {
+            var @(Model.FormVariableName)ViewModel = new @(Model.FormName)ViewModel();
+            return View(@(Model.FormVariableName)ViewModel);
+        }
+
+		[Transaction]
+        [HttpPost]
+        public virtual ActionResult Index(@(Model.FormName)ViewModel @(Model.FormVariableName)ViewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(@(Model.FormVariableName)ViewModel);
+            }
+
+            var @(Model.Entity.VariableName) = Map<@(Model.FormName)ViewModel, @(Model.Entity.Name)>(@(Model.FormVariableName)ViewModel);
+            @(Model.Entity.VariableName)Repository.Add(@(Model.Entity.VariableName));
+
+            return RedirectToAction("Index");
+        }
+    }
+}

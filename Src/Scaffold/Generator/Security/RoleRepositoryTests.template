@@ -1,0 +1,110 @@
+﻿using System.Linq;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.CoreNamespace).Repositories;
+using NHibernate;
+using Xunit;
+
+namespace @(Model.TestNamespace).Repositories
+{
+    public class RoleRepositoryTests : PersistenceTest
+    {
+        private readonly IRoleRepository roleRepository;
+
+        public RoleRepositoryTests()
+        {
+            roleRepository = new RoleRepository(UnitOfWork);
+        }
+
+        [Fact]
+        public void ShouldAddRole()
+        {
+            var role = new Role
+            {
+                Name = "Admin"
+            };
+            roleRepository.Add(role);
+            Assert.NotNull(role.Id);
+
+            using (ISession session = CreateSession())
+            {
+                int count = session.QueryOver<Role>().RowCount();
+                Assert.Equal(1, count);
+
+                Role persistedRole = session.QueryOver<Role>().List().FirstOrDefault();
+                Assert.Equal("Admin", persistedRole.Name);
+
+            }
+        }
+
+        [Fact]
+        public void ShouldHaveUsers()
+        {
+            var role = new Role
+            {
+                Name = "Admin"
+            };
+            var user = new User
+                           {
+                               UserName = "rna",
+                           };
+            user.AddRole(role);
+            roleRepository.Add(role);
+
+            UnitOfWork.SaveChanges();
+
+            Assert.NotNull(role.Id);
+
+            using (ISession session = CreateSession())
+            {
+                int roleCount = session.QueryOver<Role>().RowCount();
+                Assert.Equal(1, roleCount);
+
+                int userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(1, userCount);
+
+                Role persistedRole = session.QueryOver<Role>().List().FirstOrDefault();
+                Assert.Equal(1, persistedRole.Users.Count);
+                Assert.Equal("rna", persistedRole.Users.FirstOrDefault().UserName);
+            }            
+        }
+
+        [Fact]
+        public void ShouldGetRoleByName()
+        {
+            using (ISession session = CreateSession())
+            {
+                var role1 = new Role { Name = "Admin" };
+                session.Save(role1);
+                var role2 = new Role { Name = "SuperAdmin" };
+                session.Save(role2);
+            }
+
+
+            var role = roleRepository.FindByName("Admin");
+            Assert.NotNull(role);
+            Assert.Equal("Admin", role.Name);
+        }
+
+        [Fact]
+        public void ShouldDeleteRole()
+        {
+            using (ISession session = CreateSession())
+            {
+                var newRole = new Role { Name = "Admin" };
+                session.Save(newRole);
+            }
+
+
+            var role = roleRepository.FindByName("Admin");
+            roleRepository.Delete(role);
+            UnitOfWork.SaveChanges();
+
+            using (ISession session = CreateSession())
+            {
+                var roleCount = session.QueryOver<Role>().RowCount();
+                Assert.Equal(0, roleCount);
+            }
+        }
+    }
+}

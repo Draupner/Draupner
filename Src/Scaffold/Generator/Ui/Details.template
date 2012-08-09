@@ -1,0 +1,26 @@
+﻿@@model @(Model.WebNamespace).Models.@(Model.Entity.Name)ViewModel
+           
+@@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Details</h2>
+
+<fieldset>
+    <legend>@(Model.Entity.Name)</legend>
+
+@foreach(var property in Model.Entity.BasicProperties) {
+if(property.Name != "Id") {
+    <div class="display-label">@property.Name:</div>
+    <div class="display-field">
+        @@Html.DisplayFor(model => model.@property.Name)
+    </div>
+}
+}
+
+</fieldset>
+<p>
+    @@Html.ActionLink("Edit", "Edit", new { id=Model.Id }) |
+    @@Html.ActionLink("Back to List", "Index")
+</p>

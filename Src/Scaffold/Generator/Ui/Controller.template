@@ -1,0 +1,119 @@
+﻿using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Transactions;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+
+namespace @(Model.WebNamespace).Controllers
+{
+    public class @(Model.Entity.Name)Controller : AbstractController
+    {
+        private const int PageSize = 10;
+
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository;
+
+        public @(Model.Entity.Name)Controller(I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)Repository)
+        {
+            this.@(Model.Entity.VariableName)Repository = @(Model.Entity.VariableName)Repository;
+        }
+
+		[Transaction]
+        public virtual ActionResult Index(int? page, GridSortOptions sort)
+        {
+            var @(Model.Entity.VariableName)s = @(Model.Entity.VariableName)Repository.FindPage(page ?? 1, PageSize, sort.Column, sort.Direction == SortDirection.Ascending ? SortOrder.Ascending: SortOrder.Descending);
+
+            var @(Model.Entity.VariableName)ViewModels = Map<Page<@(Model.Entity.Name)>, IPagination<@(Model.Entity.Name)ViewModel>>(@(Model.Entity.VariableName)s);
+            ViewData["sort"] = sort;
+
+            return View(@(Model.Entity.VariableName)ViewModels);
+        }
+
+		[Transaction]
+        public virtual ViewResult Details(long id)
+        {
+            var @(Model.Entity.VariableName) = @(Model.Entity.VariableName)Repository.Get(id);
+
+            if (@(Model.Entity.VariableName) == null)
+            {
+                return ViewNotFound("No @(Model.Entity.VariableName) with id: " + id);
+            }
+
+            @(Model.Entity.Name)ViewModel @(Model.Entity.VariableName)ViewModel = Map<@(Model.Entity.Name), @(Model.Entity.Name)ViewModel>(@(Model.Entity.VariableName));
+            return View(@(Model.Entity.VariableName)ViewModel);
+        }
+
+		[Transaction]
+        public virtual ViewResult Create()
+        {
+            var @(Model.Entity.VariableName)ViewModel = new @(Model.Entity.Name)ViewModel();
+            return View(@(Model.Entity.VariableName)ViewModel);
+        }
+
+		[Transaction]
+        [HttpPost]
+        public virtual ActionResult Create(@(Model.Entity.Name)ViewModel @(Model.Entity.VariableName)ViewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(@(Model.Entity.VariableName)ViewModel);
+            }
+
+            var @(Model.Entity.VariableName) = Map<@(Model.Entity.Name)ViewModel, @(Model.Entity.Name)>(@(Model.Entity.VariableName)ViewModel);
+            @(Model.Entity.VariableName)Repository.Add(@(Model.Entity.VariableName));
+
+            return RedirectToAction("Index");
+        }
+
+		[Transaction]
+        public virtual ViewResult Edit(long id)
+        {
+            var @(Model.Entity.VariableName) = @(Model.Entity.VariableName)Repository.Get(id);
+            if (@(Model.Entity.VariableName) == null)
+            {
+                return ViewNotFound("No @(Model.Entity.VariableName) with id: " + id);
+            }
+
+            @(Model.Entity.Name)ViewModel @(Model.Entity.VariableName)ViewModel = Map<@(Model.Entity.Name), @(Model.Entity.Name)ViewModel>(@(Model.Entity.VariableName));
+            return View(@(Model.Entity.VariableName)ViewModel);
+        }
+
+		[Transaction]
+        [HttpPost]
+        public virtual ActionResult Edit(@(Model.Entity.Name)ViewModel @(Model.Entity.VariableName)ViewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(@(Model.Entity.VariableName)ViewModel);
+            }
+
+            var @(Model.Entity.VariableName) = @(Model.Entity.VariableName)Repository.Get(@(Model.Entity.VariableName)ViewModel.Id);
+            if (@(Model.Entity.VariableName) == null)
+            {
+                return ViewNotFound("No @(Model.Entity.VariableName) with id: " + @(Model.Entity.VariableName)ViewModel.Id);
+            }
+
+            Map(@(Model.Entity.VariableName)ViewModel, @(Model.Entity.VariableName));
+
+            return RedirectToAction("Index");
+        }
+
+        [Transaction]
+		[HttpPost]
+        public virtual ActionResult Delete(long id)
+        {
+            var @(Model.Entity.VariableName) = @(Model.Entity.VariableName)Repository.Get(id);
+            if (@(Model.Entity.VariableName) == null)
+            {
+                return ViewNotFound("No @(Model.Entity.VariableName) with id: " + id);
+            }
+
+            @(Model.Entity.VariableName)Repository.Delete(@(Model.Entity.VariableName));
+
+            return RedirectToAction("Index");
+        }
+    }
+}

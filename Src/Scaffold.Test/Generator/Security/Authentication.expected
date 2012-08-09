@@ -1,0 +1,43 @@
+﻿using System.Web;
+using System.Web.Security;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+
+namespace Blah.Web.Common.Security
+{
+    public class Authentication : IAuthentication
+    {
+        private readonly IUserRepository userRepository;
+
+        public Authentication(IUserRepository userRepository)
+        {
+            this.userRepository = userRepository;
+        }
+		
+		public bool ValidateUser(string userName, string password)
+        {
+            return Membership.ValidateUser(userName, password);
+        }
+
+        public void LogOn(string userName, bool rememberMe)
+        {
+            FormsAuthentication.SetAuthCookie(userName, rememberMe);            
+        }
+
+        public bool ChangePassword(string userName, string oldPassword, string newPassword)
+        {
+            MembershipUser currentUser = Membership.GetUser(userName, true);
+            return currentUser.ChangePassword(oldPassword, newPassword);            
+        }
+
+        public void LogOff()
+        {
+            FormsAuthentication.SignOut();
+        }
+
+        public User CurrentUser()
+        {
+            return userRepository.FindByUserName(HttpContext.Current.User.Identity.Name);
+        }
+    }
+}

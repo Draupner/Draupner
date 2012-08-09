@@ -1,0 +1,15 @@
+﻿@model IPagination<Blah.Web.Models.BookViewModel>
+@{
+    ViewBag.Title = "Book";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<h2>Books</h2>
+
+@Html.Grid(Model).Sort((GridSortOptions)ViewData["sort"]).Columns(column => {
+    column.For(item => item.Id).Named("Id");
+    column.For(item => item.Name).Named("Name");
+}).Empty("No Books found.").Attributes(@class => "grid")
+
+@Html.Pager((IPagination)Model)

@@ -1,0 +1,68 @@
+﻿using System.Web.Mvc;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+using Blah.Web.Common.AutoMapper;
+using Blah.Web.Controllers;
+using Blah.Web.Models;
+using Xunit;
+using Rhino.Mocks;
+
+namespace Blah.Test.Controllers
+{
+    public class CreateBookControllerTests
+    {
+        private readonly MockRepository mocks;
+        private readonly IBookRepository bookRepositoryMock;
+        private readonly CreateBookController controller;
+        private readonly AutoMapperConfiguration autoMapperConfiguration;
+
+        public CreateBookControllerTests()
+        {
+            autoMapperConfiguration = new AutoMapperConfiguration();
+            autoMapperConfiguration.Configure();
+
+            mocks = new MockRepository();
+            bookRepositoryMock = mocks.DynamicMock<IBookRepository>();
+            controller = new CreateBookController(bookRepositoryMock);
+        }
+
+        [Fact]
+        public void ShouldGetIndex()
+        {
+            mocks.ReplayAll();
+
+            var result = controller.Index();
+
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(CreateBookViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldPostIndex()
+        {
+            var createBookViewModel = new CreateBookViewModel();
+
+            Expect.Call(() => bookRepositoryMock.Add(Arg<Book>.Is.Anything));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Index(createBookViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostIndexWhereNotValid()
+        {
+            var createBookViewModel = new CreateBookViewModel();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Index(createBookViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(createBookViewModel, result.Model);
+        }
+    }
+}

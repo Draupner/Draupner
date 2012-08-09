@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+  <!-- Assembly redirect because AutoFixture.Xunit depends on an older version of XUnit.Extensions -->
+  <runtime>
+    <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
+      <dependentAssembly>
+        <assemblyIdentity name="xunit.extensions" publicKeyToken="8d05b1bb7a6fdb6c"/>
+        <bindingRedirect oldVersion="1.6.1.1521" newVersion="1.8.0.1545"/>
+      </dependentAssembly>
+    </assemblyBinding>
+  </runtime>
+</configuration>

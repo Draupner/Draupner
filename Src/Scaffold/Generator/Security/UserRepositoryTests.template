@@ -1,0 +1,321 @@
+﻿using System;
+using System.Linq;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.CoreNamespace).Repositories;
+using NHibernate;
+using Xunit;
+
+namespace @(Model.TestNamespace).Repositories
+{
+    public class UserRepositoryTests : PersistenceTest
+    {
+        private readonly IUserRepository userRepository;
+
+        public UserRepositoryTests()
+        {
+            userRepository = new UserRepository(UnitOfWork);
+        }
+
+        [Fact]
+        public void ShouldAddUser()
+        {
+            var user = new User
+                           {
+                               UserName = "Test",
+                               Comment = "Foo",
+                               Password = "123456",
+                               PasswordQuestion = "Hej?",
+                               PasswordAnswer = "Nej",
+                               IsApproved = true,
+                               LastActivityDate = new DateTime(2011, 11, 1),
+                               LastLoginDate = new DateTime(2011, 11, 2),
+                               LastPasswordChangedDate = new DateTime(2011, 11, 3),
+                               CreationDate = new DateTime(2011, 10, 1),
+                               IsLockedOut = false,
+                               LastLockedOutDate = new DateTime(2011, 10, 2),
+                               FailedPasswordAttemptCount = 1,
+                               FailedPasswordAnswerAttemptCount = 2,
+                               Email = "private@mail.dk",
+
+            };
+            userRepository.Add(user);
+            Assert.NotNull(user.Id);
+
+            using (ISession session = CreateSession())
+            {
+                int count = session.QueryOver<User>().RowCount();
+                Assert.Equal(1, count);
+
+                User persistedUser = session.QueryOver<User>().List().FirstOrDefault();
+                Assert.Equal("Test", persistedUser.UserName);
+                Assert.Equal("Foo", persistedUser.Comment);
+                Assert.Equal("123456", persistedUser.Password);
+                Assert.Equal("Hej?", persistedUser.PasswordQuestion);
+                Assert.Equal("Nej", persistedUser.PasswordAnswer);
+                Assert.Equal(true, persistedUser.IsApproved);
+                Assert.Equal(new DateTime(2011, 11, 1), persistedUser.LastActivityDate);
+                Assert.Equal(new DateTime(2011, 11, 2), persistedUser.LastLoginDate);
+                Assert.Equal(new DateTime(2011, 11, 3), persistedUser.LastPasswordChangedDate);
+                Assert.Equal(new DateTime(2011, 10, 1), persistedUser.CreationDate);
+                Assert.Equal(false, persistedUser.IsLockedOut);
+                Assert.Equal(new DateTime(2011, 10, 2), persistedUser.LastLockedOutDate);
+                Assert.Equal(1, persistedUser.FailedPasswordAttemptCount);
+                Assert.Equal(2, persistedUser.FailedPasswordAnswerAttemptCount);
+                Assert.Equal("private@mail.dk", persistedUser.Email);
+            }
+        }
+
+
+
+        [Fact]
+        public void ShouldHaveRoles()
+        {
+            var user = new User
+            {
+                UserName = "Test",
+            };
+            var role = new Role {Name = "Admin"};
+            user.AddRole(role);
+            
+            userRepository.Add(user);
+
+            UnitOfWork.SaveChanges();
+
+            Assert.NotNull(user.Id);
+            Assert.NotNull(role.Id);
+
+            using (ISession session = CreateSession())
+            {
+                int userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(1, userCount);
+
+                int roleCount = session.QueryOver<Role>().RowCount();
+                Assert.Equal(1, roleCount);
+
+                User persistedUser = session.QueryOver<User>().List().FirstOrDefault();
+                Assert.Equal(1, persistedUser.Roles.Count);
+                Assert.Equal("Admin", persistedUser.Roles.FirstOrDefault().Name);
+            }            
+        }
+
+        [Fact]
+        public void ShouldGetUser()
+        {
+            long userId;
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Name" };
+                session.Save(user1);
+                session.Flush();
+                userId = user1.Id;
+            }
+
+            var user = userRepository.Get(userId);
+            Assert.NotNull(user);
+            Assert.Equal("Name", user.UserName);
+        }
+        [Fact]
+        public void ShouldDeleteUser()
+        {
+            long userId;
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "1"};
+                session.Save(user1);
+                session.Flush();
+                userId = user1.Id;
+            }
+
+            var user = userRepository.Get(userId);
+            userRepository.Delete(user);
+            UnitOfWork.SaveChanges();
+
+            using (ISession session = CreateSession())
+            {
+                var count = session.QueryOver<User>().RowCount();
+                Assert.Equal(0, count);
+            }
+        }
+
+        [Fact]
+        public void ShouldCountAllUser()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "1"};
+                var user2 = new User { UserName = "2"};
+                var user3 = new User { UserName = "3"};
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+                session.Flush();
+            }
+
+            var count = userRepository.CountAll();
+            Assert.Equal(3, count);
+        }
+
+        [Fact]
+        public void ShouldGetAllUser()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "1"};
+                var user2 = new User { UserName = "2"};
+                var user3 = new User { UserName = "3"};
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+                session.Flush();
+            }
+
+            var allUsers = userRepository.FindAll();
+            Assert.Equal(3, allUsers.Count);
+        }
+
+        [Fact]
+        public void ShouldGetUserByUserName()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Blah"};
+                session.Save(user1);
+                session.Flush();
+            }
+
+            var user = userRepository.FindByUserName("Blah");
+            Assert.NotNull(user);
+            Assert.Equal("Blah", user.UserName);            
+        }
+
+        [Fact]
+        public void ShouldGetAllUsersPaged()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "1" };
+                var user2 = new User { UserName = "2" };
+                var user3 = new User { UserName = "3" };
+                var user4 = new User { UserName = "4" };
+                var user5 = new User { UserName = "5" };
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+                session.Save(user4);
+                session.Save(user5);
+                session.Flush();
+            }
+
+            var usersPage1 = userRepository.FindPage(1, 2, "Id", SortOrder.Ascending);
+            Assert.Equal(2, usersPage1.Items.Count());
+            Assert.Equal(5, usersPage1.TotalItemCount);
+
+            var usersPage2 = userRepository.FindPage(2, 2, "Id", SortOrder.Ascending);
+            Assert.Equal(2, usersPage2.Items.Count());
+            Assert.Equal(5, usersPage2.TotalItemCount);
+
+            var usersPage3 = userRepository.FindPage(3, 2, "Id", SortOrder.Ascending);
+            Assert.Equal(1, usersPage3.Items.Count());
+            Assert.Equal(5, usersPage3.TotalItemCount);
+
+            var allUserNames = usersPage1.Items.Union(usersPage2.Items).Union(usersPage3.Items).Select(u => u.UserName).ToArray();
+
+            Array.Sort(allUserNames);
+            Assert.Equal(new[] { "1", "2", "3", "4", "5" }, allUserNames);
+        }
+
+
+        [Fact]
+        public void ShouldGetUserNameByEmail()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Foo", Email = "foo@test.com" };
+                session.Save(user1);
+                var user2 = new User { UserName = "Bar", Email = "bar@test.com" };
+                session.Save(user2);
+                session.Flush();
+            }
+
+            var userName = userRepository.FindUserNameByEmail("foo@test.com");
+            Assert.Equal("Foo", userName);
+        }
+
+        [Fact]
+        public void ShouldGetUsersByEmail()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Foo1", Email = "foo@test.com" };
+                session.Save(user1);
+                var user2 = new User { UserName = "Bar", Email = "bar@test.com" };
+                session.Save(user2);
+                var user3 = new User { UserName = "Foo2", Email = "foo@test.com" };
+                session.Save(user3);
+                session.Flush();
+            }
+
+            var userPage1 = userRepository.FindUsersByEmail("foo@test.com",1,1);
+            Assert.Equal(1, userPage1.Items.Count());
+
+            var userPage2 = userRepository.FindUsersByEmail("foo@test.com", 2, 1);
+            Assert.Equal(1, userPage2.Items.Count());
+
+            var allUserNames = userPage1.Items.Union(userPage2.Items).Select(u => u.UserName).ToArray();
+
+            Array.Sort(allUserNames);
+            Assert.Equal(new[] { "Foo1", "Foo2" }, allUserNames);
+        }
+
+        [Fact]
+        public void ShouldGetUsersByUserName()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Foo1" };
+                session.Save(user1);
+                var user2 = new User { UserName = "Bar" };
+                session.Save(user2);
+                var user3 = new User { UserName = "Foo2" };
+                session.Save(user3);
+                session.Flush();
+            }
+
+            var userPage1 = userRepository.FindUsersByUserName("Foo", 1, 1);
+            Assert.Equal(1, userPage1.Items.Count());
+
+            var userPage2 = userRepository.FindUsersByUserName("Foo", 2, 1);
+            Assert.Equal(1, userPage2.Items.Count());
+
+            var allUserEmails = userPage1.Items.Union(userPage2.Items).Select(u => u.UserName).ToArray();
+
+            Array.Sort(allUserEmails);
+            Assert.Equal(new[] { "Foo1", "Foo2" }, allUserEmails);
+        }
+
+        [Fact]
+        public void ShouldFindUsersMatchingUserNameAndHavingRole()
+        {
+            using (ISession session = CreateSession())
+            {
+                var user1 = new User { UserName = "Foo", Email = "foo1@test.com" };
+                user1.Roles.Add(new Role{Name = "Admin"});
+                session.Save(user1);
+                var user2 = new User { UserName = "Bar", Email = "bar@test.com" };
+                session.Save(user2);
+                var user3 = new User { UserName = "Foo", Email = "foo2@test.com" };
+                user3.Roles.Add(new Role { Name = "SuperAdmin" });
+                session.Save(user3);
+                session.Flush();
+            }
+            var roleRepository = new RoleRepository(UnitOfWork);
+            var role = roleRepository.FindByName("Admin");
+
+            var users = userRepository.FindUsersContainingUserNameAndHavingRole("oo", role);
+            Assert.Equal(1, users.Count);
+            Assert.Equal("foo1@test.com", users.FirstOrDefault().Email);
+        }
+    }
+}

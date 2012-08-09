@@ -1,0 +1,62 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Common.AutoMapper;
+using @(Model.WebNamespace).Controllers;
+using @(Model.WebNamespace).Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+using Xunit;
+using Ploeh.AutoFixture;
+using Rhino.Mocks;
+
+namespace @(Model.TestNamespace).Controllers
+{
+    public class @(Model.ListName)ControllerTests
+    {
+        private readonly MockRepository mocks;
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)RepositoryMock;
+        private readonly @(Model.ListName)Controller controller;
+        private readonly Fixture fixture;
+        private readonly AutoMapperConfiguration autoMapperConfiguration;
+
+        public @(Model.ListName)ControllerTests()
+        {
+            autoMapperConfiguration = new AutoMapperConfiguration();
+            autoMapperConfiguration.Configure();
+            fixture = new Fixture();
+
+            mocks = new MockRepository();
+            @(Model.Entity.VariableName)RepositoryMock = mocks.DynamicMock<I@(Model.Entity.Name)Repository>();
+            controller = new @(Model.ListName)Controller(@(Model.Entity.VariableName)RepositoryMock);
+        }
+
+        [Fact]
+        public void ShouldGetIndex()
+        {
+            var page = new Page<@(Model.Entity.Name)>(new List<@(Model.Entity.Name)> { new @(Model.Entity.Name)(), new @(Model.Entity.Name)() }, 5, 10, 100);
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.FindPage(5, 10, "Id", SortOrder.Ascending)).Return(page);
+
+            mocks.ReplayAll();
+
+            var sortOptions = new GridSortOptions { Column = "Id", Direction = SortDirection.Ascending };
+            var result = controller.Index(5, sortOptions) as ViewResult;
+            
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+
+            var pagination = (IPagination<@(Model.Entity.Name)ViewModel>)result.Model;
+            Assert.Equal(5, pagination.PageNumber);
+            Assert.Equal(10, pagination.PageSize);
+            Assert.Equal(100, pagination.TotalItems);
+            Assert.Equal(2, pagination.Count());
+
+            Assert.Equal(result.ViewData["sort"], sortOptions);
+        }
+    }
+}

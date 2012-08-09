@@ -1,0 +1,15 @@
+﻿using FluentNHibernate.Mapping;
+using Blah.Core.Domain.Model;
+
+namespace Blah.Core.Common.NHibernate
+{
+    public class BookMap : ClassMap<Book>
+    {
+        public BookMap()
+        {
+            Id(x => x.Id);
+            Map(x => x.Title);
+            Map(x => x.Author);
+        }
+    }
+}

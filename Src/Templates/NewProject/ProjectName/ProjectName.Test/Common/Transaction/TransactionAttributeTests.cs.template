@@ -1,0 +1,121 @@
+using System;
+using Castle.MicroKernel.Registration;
+using Castle.MicroKernel.SubSystems.Configuration;
+using Castle.Windsor;
+using @(Model.CoreNamespace).Common.NHibernate;
+using @(Model.CoreNamespace).Common.Transactions;
+using NHibernate;
+using Xunit;
+using Rhino.Mocks;
+
+namespace @(Model.TestNamespace).Common.Transaction
+{
+    public class TransactionAttributeTests : PersistenceTest, IDisposable
+    {
+        private readonly IWindsorContainer container;
+
+        public TransactionAttributeTests()
+        {
+            var fooEntityRepository = new FooRepository(UnitOfWork);
+
+            container = new WindsorContainer().Install(new FooWindsorInstaller(fooEntityRepository));
+
+            var sessionFactoryStub = MockRepository.GenerateStub<ISessionFactory>();
+            sessionFactoryStub.Stub(x => x.GetCurrentSession()).Return(UnitOfWorkSession);
+            NHibernateConfiguration.SessionFactory = sessionFactoryStub;
+        }
+
+        public void Dispose()
+        {
+            container.Dispose();
+        }
+
+        [Fact]
+        public void ShouldRollback()
+        {
+            var foo = container.Resolve<IFooService>();
+            try
+            {
+                Assert.Throws<Exception>(() => foo.TestRollback());
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+
+            UnitOfWork.SaveChanges();
+
+            using (var session = CreateSession())
+            {
+                var foos = session.QueryOver<Foo>().List();
+
+                Assert.Equal(0, foos.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldCommit()
+        {
+            var foo = container.Resolve<IFooService>();
+            foo.TestCommit();
+
+            UnitOfWork.SaveChanges();
+
+            using (var session = CreateSession())
+            {
+                var foos = session.QueryOver<Foo>().List();
+
+                Assert.Equal(1, foos.Count);
+            }
+        }
+
+    }
+
+    public class FooWindsorInstaller : IWindsorInstaller
+    {
+        private readonly IFooRepository fooEntityRepository;
+
+        public FooWindsorInstaller(IFooRepository fooEntityRepository)
+        {
+            this.fooEntityRepository = fooEntityRepository;
+        }
+
+        public void Install(IWindsorContainer container, IConfigurationStore store)
+        {
+            container.Register(Component.For<TransactionInterceptor>().Named(typeof(TransactionInterceptor).Name));
+            container.Kernel.ComponentModelBuilder.AddContributor(new TransactionInterceptorContributer());
+            container.Register(Component.For<IFooRepository>().Instance(fooEntityRepository));
+            container.Register(Component.For<IFooService>().ImplementedBy<FooService>());
+        }
+    }
+
+    public interface IFooService
+    {
+        void TestRollback();
+        void TestCommit();
+    }
+
+    public class FooService : IFooService
+    {
+        private readonly IFooRepository fooEntityRepository;
+
+        public FooService(IFooRepository fooEntityRepository)
+        {
+            this.fooEntityRepository = fooEntityRepository;
+        }
+
+        [Transaction]
+        public virtual void TestRollback()
+        {
+            fooEntityRepository.Add(new Foo());
+            throw new Exception();
+        }
+
+        [Transaction]
+        public virtual void TestCommit()
+        {
+            fooEntityRepository.Add(new Foo());
+        }
+    }
+}
+

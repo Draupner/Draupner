@@ -1,0 +1,35 @@
+﻿using System.Web.Mvc;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Transactions;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+using Blah.Web.Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+
+namespace Blah.Web.Controllers
+{
+    public class MyBookController : AbstractController
+    {
+        private const int PageSize = 10;
+
+        private readonly IBookRepository bookRepository;
+
+        public MyBookController(IBookRepository bookRepository)
+        {
+            this.bookRepository = bookRepository;
+        }
+
+		[Transaction]
+        public virtual ActionResult Index(int? page, GridSortOptions sort)
+        {
+            var books = bookRepository.FindPage(page ?? 1, PageSize, sort.Column, sort.Direction == SortDirection.Ascending ? SortOrder.Ascending: SortOrder.Descending);
+
+            var bookViewModels = Map<Page<Book>, IPagination<BookViewModel>>(books);
+            ViewData["sort"] = sort;
+
+            return View(bookViewModels);
+        }
+    }
+}

@@ -1,0 +1,230 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Common.AutoMapper;
+using @(Model.WebNamespace).Controllers;
+using @(Model.WebNamespace).Models;
+using MvcContrib.Pagination;
+using MvcContrib.Sorting;
+using MvcContrib.UI.Grid;
+using Xunit;
+using Ploeh.AutoFixture;
+using Rhino.Mocks;
+
+namespace @(Model.TestNamespace).Controllers
+{
+    public class @(Model.Entity.Name)ControllerTests
+    {
+        private readonly MockRepository mocks;
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)RepositoryMock;
+        private readonly @(Model.Entity.Name)Controller controller;
+        private readonly IFixture fixture;
+        private readonly AutoMapperConfiguration autoMapperConfiguration;
+
+        public @(Model.Entity.Name)ControllerTests()
+        {
+            autoMapperConfiguration = new AutoMapperConfiguration();
+            autoMapperConfiguration.Configure();
+            fixture = new Fixture().Customize(new AutoFixtureCustomization());
+
+            mocks = new MockRepository();
+            @(Model.Entity.VariableName)RepositoryMock = mocks.DynamicMock<I@(Model.Entity.Name)Repository>();
+            controller = new @(Model.Entity.Name)Controller(@(Model.Entity.VariableName)RepositoryMock);
+        }
+
+        [Fact]
+        public void ShouldGetIndex()
+        {
+            var page = new Page<@(Model.Entity.Name)>(new List<@(Model.Entity.Name)> { new @(Model.Entity.Name)(), new @(Model.Entity.Name)() }, 5, 10, 100);
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.FindPage(5, 10, "Id", SortOrder.Ascending)).Return(page);
+
+            mocks.ReplayAll();
+
+            var sortOptions = new GridSortOptions { Column = "Id", Direction = SortDirection.Ascending };
+            var result = controller.Index(5, sortOptions) as ViewResult;
+            
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+
+            var pagination = (IPagination<@(Model.Entity.Name)ViewModel>)result.Model;
+            Assert.Equal(5, pagination.PageNumber);
+            Assert.Equal(10, pagination.PageSize);
+            Assert.Equal(100, pagination.TotalItems);
+            Assert.Equal(2, pagination.Count());
+
+            Assert.Equal(result.ViewData["sort"], sortOptions);
+        }
+
+        [Fact]
+        public void ShouldGetDetails()
+        {
+            var @(Model.Entity.VariableName) = fixture.CreateAnonymous<@(Model.Entity.Name)>();
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(42)).Return(@(Model.Entity.VariableName));
+
+            mocks.ReplayAll();
+
+            var result = controller.Details(42);
+
+            mocks.VerifyAll();
+
+            Assert.Equal(@(Model.Entity.VariableName).Id, ((@(Model.Entity.Name)ViewModel)result.Model).Id);
+        }
+
+        [Fact]
+        public void ShouldGetDetailsWhereNotFound()
+        {
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(42)).Return(null);
+
+            mocks.ReplayAll();
+
+            var result = controller.Details(42);
+
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldGetCreate()
+        {
+            mocks.ReplayAll();
+
+            var result = controller.Create();
+
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(@(Model.Entity.Name)ViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldPostCreate()
+        {
+            var @(Model.Entity.VariableName)ViewModel = new @(Model.Entity.Name)ViewModel();
+
+            Expect.Call(() => @(Model.Entity.VariableName)RepositoryMock.Add(Arg<@(Model.Entity.Name)>.Is.Anything));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Create(@(Model.Entity.VariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostCreateWhereNotValid()
+        {
+            var @(Model.Entity.VariableName)ViewModel = new @(Model.Entity.Name)ViewModel();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Create(@(Model.Entity.VariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(@(Model.Entity.VariableName)ViewModel, result.Model);
+        }
+
+        [Fact]
+        public void ShouldGetEdit()
+        {
+            var @(Model.Entity.VariableName) = new @(Model.Entity.Name)();
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(12)).Return(@(Model.Entity.VariableName));
+
+            mocks.ReplayAll();
+            var result = controller.Edit(12);
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(@(Model.Entity.Name)ViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldGetEditWhereNotFound()
+        {
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(12)).Return(null);
+
+            mocks.ReplayAll();
+            var result = controller.Edit(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldPostEdit()
+        {
+            var @(Model.Entity.VariableName)ViewModel = fixture.CreateAnonymous<@(Model.Entity.Name)ViewModel>();
+            var @(Model.Entity.VariableName) = fixture.CreateAnonymous<@(Model.Entity.Name)>();
+
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(@(Model.Entity.VariableName)ViewModel.Id)).Return(@(Model.Entity.VariableName));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Edit(@(Model.Entity.VariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+			
+			@foreach(var property in Model.Entity.BasicProperties) {
+			@if(property.Name != "Id") {
+            @:Assert.Equal(@(Model.Entity.VariableName)ViewModel.@property.Name, @(Model.Entity.VariableName).@property.Name);
+			}
+			}
+        }
+
+        [Fact]
+        public void ShouldNotDoEditWhenNotValid()
+        {
+            var @(Model.Entity.VariableName)ViewModel = fixture.CreateAnonymous<@(Model.Entity.Name)ViewModel>();
+
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(0)).IgnoreArguments().Repeat.Never();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Edit(@(Model.Entity.VariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(@(Model.Entity.VariableName)ViewModel, result.Model);
+        }
+
+        [Fact]
+        public void ShouldNotDoEditWhenNotFound()
+        {
+            var @(Model.Entity.VariableName)ViewModel = fixture.CreateAnonymous<@(Model.Entity.Name)ViewModel>();
+
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(@(Model.Entity.VariableName)ViewModel.Id)).Return(null);
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Edit(@(Model.Entity.VariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+
+        [Fact]
+        public void ShouldPostDelete()
+        {
+            var @(Model.Entity.VariableName) = new @(Model.Entity.Name)();
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(12)).Return(@(Model.Entity.VariableName));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Delete(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostDeleteWhereNotFound()
+        {
+            Expect.Call(@(Model.Entity.VariableName)RepositoryMock.Get(12)).Return(null);
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Delete(12);
+            mocks.VerifyAll();
+
+            Assert.True(result.ViewName.Contains("NotFound"));
+        }
+    }
+}

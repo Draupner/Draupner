@@ -1,0 +1,68 @@
+﻿using System.Web.Mvc;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+using @(Model.WebNamespace).Common.AutoMapper;
+using @(Model.WebNamespace).Controllers;
+using @(Model.WebNamespace).Models;
+using Xunit;
+using Rhino.Mocks;
+
+namespace @(Model.TestNamespace).Controllers
+{
+    public class @(Model.FormName)ControllerTests
+    {
+        private readonly MockRepository mocks;
+        private readonly I@(Model.Entity.Name)Repository @(Model.Entity.VariableName)RepositoryMock;
+        private readonly @(Model.FormName)Controller controller;
+        private readonly AutoMapperConfiguration autoMapperConfiguration;
+
+        public @(Model.FormName)ControllerTests()
+        {
+            autoMapperConfiguration = new AutoMapperConfiguration();
+            autoMapperConfiguration.Configure();
+
+            mocks = new MockRepository();
+            @(Model.Entity.VariableName)RepositoryMock = mocks.DynamicMock<I@(Model.Entity.Name)Repository>();
+            controller = new @(Model.FormName)Controller(@(Model.Entity.VariableName)RepositoryMock);
+        }
+
+        [Fact]
+        public void ShouldGetIndex()
+        {
+            mocks.ReplayAll();
+
+            var result = controller.Index();
+
+            mocks.VerifyAll();
+
+            Assert.IsType(typeof(@(Model.FormName)ViewModel), result.Model);
+        }
+
+        [Fact]
+        public void ShouldPostIndex()
+        {
+            var @(Model.FormVariableName)ViewModel = new @(Model.FormName)ViewModel();
+
+            Expect.Call(() => @(Model.Entity.VariableName)RepositoryMock.Add(Arg<@(Model.Entity.Name)>.Is.Anything));
+
+            mocks.ReplayAll();
+            var result = (RedirectToRouteResult)controller.Index(@(Model.FormVariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.True(result.RouteValues.ContainsValue("Index"));
+        }
+
+        [Fact]
+        public void ShouldPostIndexWhereNotValid()
+        {
+            var @(Model.FormVariableName)ViewModel = new @(Model.FormName)ViewModel();
+            controller.ModelState.AddModelError("key", "model is invalid");
+
+            mocks.ReplayAll();
+            var result = (ViewResult)controller.Index(@(Model.FormVariableName)ViewModel);
+            mocks.VerifyAll();
+
+            Assert.Equal(@(Model.FormVariableName)ViewModel, result.Model);
+        }
+    }
+}

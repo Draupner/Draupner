@@ -1,0 +1,8 @@
+﻿namespace @(Model.CoreNamespace).Common.Persistence
+{
+    public enum SortOrder
+    {
+        Descending,
+        Ascending
+    }
+}

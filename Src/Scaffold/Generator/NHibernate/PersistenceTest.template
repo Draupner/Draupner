@@ -1,0 +1,17 @@
+﻿using FluentNHibernate.Testing;
+using @(Model.CoreNamespace).Domain.Model;
+using Ploeh.AutoFixture.Xunit;
+using Xunit.Extensions;
+
+namespace @(Model.TestNamespace).Common.NHibernate
+{
+    public class @(Model.Entity.Name)PersistenceTests : PersistenceTest
+    {
+        [Theory, AutoFixtureData]
+        public void CanCorrectlyMap@(Model.Entity.Name)(@(Model.Entity.Name) @(Model.Entity.VariableName))
+        {
+            new PersistenceSpecification<@(Model.Entity.Name)>(UnitOfWorkSession)
+                .VerifyTheMappings(@(Model.Entity.VariableName));
+        }
+    }
+}

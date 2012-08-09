@@ -1,0 +1,30 @@
+﻿using FluentNHibernate.Cfg;
+using FluentNHibernate.Cfg.Db;
+using NHibernate;
+using NHibernate.Context;
+using NHibernate.Tool.hbm2ddl;
+
+namespace @(Model.CoreNamespace).Common.NHibernate
+{
+    public class NHibernateConfiguration
+    {
+        public static ISessionFactory SessionFactory { get; set; }
+
+        public void Configure()
+        {
+            SessionFactory = CreateSessionFactory();
+        }
+
+        private ISessionFactory CreateSessionFactory()
+        { 
+            return Fluently.Configure() 
+                .Database(
+                    MsSqlConfiguration.MsSql2008.ConnectionString(c => c.FromConnectionStringWithKey("MainDatabase"))
+                )
+                .Mappings(m => m.FluentMappings.AddFromAssemblyOf<NHibernateConfiguration>())
+                .ExposeConfiguration(cfg => new SchemaUpdate(cfg).Execute(false, true))
+                .CurrentSessionContext<WebSessionContext>().BuildSessionFactory();
+        }
+        
+    }
+}

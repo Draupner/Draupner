@@ -1,0 +1,309 @@
+﻿using System;
+using System.Collections.Specialized;
+using System.Configuration.Provider;
+using Castle.MicroKernel.Registration;
+using Castle.Windsor;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Windsor;
+using Blah.Web.Common.Security;
+using Blah.Core.Domain.Model;
+using Xunit;
+
+namespace Blah.Test.Common.Security
+{
+    public class RoleProviderTests : PersistenceTest
+    {
+        private readonly NHibernateRoleProvider roleProvider;
+
+        public RoleProviderTests()
+        {
+            var unitOfWorkFactory = new UnitOfWorkFactoryStub(CreateUnitOfWork);
+            Ioc.Container = new WindsorContainer();
+            Ioc.Container.Register(Component.For<IUnitOfWorkFactory>().Instance(unitOfWorkFactory));
+
+
+            roleProvider = new NHibernateRoleProvider();
+            var config = new NameValueCollection {{"applicationName", "El-Eftersyn"}};
+            roleProvider.Initialize("RoleProvider", config);
+        }
+
+        [Fact]
+        public void ShouldCheckIfUserIsInRole()
+        {
+            using(var session = CreateSession())
+            {
+                var role = new Role {Name = "Admin"};
+                var user1 = new User{UserName= "rna"};
+                user1.AddRole(role);
+                session.Save(user1);
+
+                var user2 = new User { UserName = "anr"};
+                session.Save(user2);
+                
+                session.Flush();
+            }
+
+            Assert.True(roleProvider.IsUserInRole("rna", "Admin"));
+            Assert.False(roleProvider.IsUserInRole("anr", "Admin"));
+            Assert.False(roleProvider.IsUserInRole("blah", "Admin"));
+        }
+
+        [Fact]
+        public void ShouldGetRolesForUser()
+        {
+            using (var session = CreateSession())
+            {
+                var user = new User { UserName = "rna" };
+
+                var role1 = new Role { Name = "Admin" };
+                var role2 = new Role { Name = "SuperMan" };
+                var role3 = new Role { Name = "FooBar" };
+
+                user.AddRole(role1);
+                user.AddRole(role2);
+                user.AddRole(role3);
+                
+                session.Save(user);
+
+                session.Flush();
+            }
+
+            var roles = roleProvider.GetRolesForUser("rna");
+            Array.Sort(roles);
+            Assert.Equal(new []{ "Admin", "FooBar", "SuperMan" }, roles);
+        }
+
+        [Fact]
+        public void ShouldCreateRole()
+        {
+            roleProvider.CreateRole("FooBar");
+
+            using(var session = CreateSession())
+            {
+                var roles = session.QueryOver<Role>().List();
+                Assert.Equal(1, roles.Count);
+                Assert.Equal("FooBar", roles[0].Name);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotCreateRoleWhenRoleWithSameNameExists()
+        {
+            using(var session = CreateSession())
+            {
+                var role = new Role {Name = "FooBar"};
+                session.Save(role);
+                session.Flush();
+            }
+            
+            Assert.Throws<ProviderException>(() => roleProvider.CreateRole("FooBar"));
+
+            using (var session = CreateSession())
+            {
+                var roles = session.QueryOver<Role>().List();
+                Assert.Equal(1, roles.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldDeleteRole()
+        {
+            using (var session = CreateSession())
+            {
+                var role = new Role { Name = "FooBar" };
+                session.Save(role);
+                session.Flush();
+            }
+
+            roleProvider.DeleteRole("FooBar", false);
+
+            using (var session = CreateSession())
+            {
+                var roles = session.QueryOver<Role>().List();
+                Assert.Equal(0, roles.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldCheckIfRoleExists()
+        {
+            using (var session = CreateSession())
+            {
+                var role = new Role { Name = "FooBar" };
+                session.Save(role);
+                session.Flush();
+            }
+
+            Assert.True(roleProvider.RoleExists("FooBar"));
+            Assert.False(roleProvider.RoleExists("Bar"));
+        }
+
+        [Fact]
+        public void ShouldAddUsersToRoles()
+        {
+            using (var session = CreateSession())
+            {
+                var role1 = new Role { Name = "FooBar" };
+                var role2 = new Role { Name = "Admin" };
+
+                session.Save(role1);
+                session.Save(role2);
+
+                var user1 = new User { UserName = "rna"};
+                var user2 = new User { UserName = "anr" };
+                var user3 = new User { UserName = "nar" };
+                
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+
+                session.Flush();
+            }
+
+            roleProvider.AddUsersToRoles(new[] { "rna", "anr" }, new[] { "FooBar", "Admin" });
+
+            using (var session = CreateSession())
+            {
+                var user1 = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.Equal(2, user1.Roles.Count);
+
+                var user2 = session.QueryOver<User>().Where(u => u.UserName == "anr").SingleOrDefault();
+                Assert.Equal(2, user2.Roles.Count);
+
+                var user3 = session.QueryOver<User>().Where(u => u.UserName == "nar").SingleOrDefault();
+                Assert.Equal(0, user3.Roles.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldRemoveUsersFromRoles()
+        {
+            using (var session = CreateSession())
+            {
+                var role1 = new Role { Name = "FooBar" };
+                var role2 = new Role { Name = "Admin" };
+
+                var user1 = new User { UserName = "rna" };
+                user1.AddRole(role1);
+                user1.AddRole(role2);
+                var user2 = new User { UserName = "anr" };
+                user2.AddRole(role1);
+                user2.AddRole(role2);
+                var user3 = new User { UserName = "nar" };
+                user3.AddRole(role1);
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+
+                session.Flush();
+            }
+
+            roleProvider.RemoveUsersFromRoles(new[] { "rna", "nar" }, new[] { "FooBar", "Admin" });
+
+            using (var session = CreateSession())
+            {
+                var user1 = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.Equal(0, user1.Roles.Count);
+
+                var user2 = session.QueryOver<User>().Where(u => u.UserName == "anr").SingleOrDefault();
+                Assert.Equal(2, user2.Roles.Count);
+
+                var user3 = session.QueryOver<User>().Where(u => u.UserName == "nar").SingleOrDefault();
+                Assert.Equal(0, user3.Roles.Count);
+            }            
+        }
+
+        [Fact]
+        public void ShouldGetUsersInRole()
+        {
+            using (var session = CreateSession())
+            {
+                var role1 = new Role { Name = "FooBar" };
+                var role2 = new Role { Name = "Admin" };
+
+                var user1 = new User { UserName = "rna" };
+                user1.AddRole(role1);
+                user1.AddRole(role2);
+                var user2 = new User { UserName = "anr" };
+                user2.AddRole(role1);
+                user2.AddRole(role2);
+                var user3 = new User { UserName = "nar" };
+                user3.AddRole(role1);
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+
+                session.Flush();
+            }
+
+            var usersInRole1 = roleProvider.GetUsersInRole("FooBar");
+            Assert.Equal(3, usersInRole1.Length);
+            Array.Sort(usersInRole1);
+            Assert.Equal(new []{"anr", "nar", "rna"}, usersInRole1);
+
+            var usersInRole2 = roleProvider.GetUsersInRole("Admin");
+            Assert.Equal(2, usersInRole2.Length);
+            Array.Sort(usersInRole2);
+            Assert.Equal(new[] { "anr" , "rna"}, usersInRole2);
+        }
+
+        [Fact]
+        public void ShouldGetAllRoles()
+        {
+            using (var session = CreateSession())
+            {
+                var role1 = new Role { Name = "FooBar" };
+                var role2 = new Role { Name = "Admin" };
+                var role3 = new Role { Name = "SuperMan" };
+
+                session.Save(role1);
+                session.Save(role2);
+                session.Save(role3);
+
+                session.Flush();
+            }
+
+            var allRoles = roleProvider.GetAllRoles();
+
+            Assert.Equal(3, allRoles.Length);
+            Array.Sort(allRoles);
+            Assert.Equal(new[] { "Admin", "FooBar", "SuperMan" }, allRoles);            
+        }
+
+        [Fact]
+        public void ShouldFindUsersHavingRoleAndMatchingUserName()
+        {
+            using (var session = CreateSession())
+            {
+                var role1 = new Role { Name = "FooBar" };
+                var role2 = new Role { Name = "Admin" };
+
+                var user1 = new User { UserName = "Rasmus Andersen" };
+                user1.AddRole(role1);
+                user1.AddRole(role2);
+                var user2 = new User { UserName = "Martin Andersen" };
+                user2.AddRole(role1);
+                user2.AddRole(role2);
+                var user3 = new User { UserName = "Kaj Hansen" };
+                user3.AddRole(role1);
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+
+                session.Flush();
+            }
+
+            var users = roleProvider.FindUsersInRole("FooBar", "and");
+
+            Assert.Equal(2, users.Length);
+            Array.Sort(users);
+            Assert.Equal(new[] { "Martin Andersen", "Rasmus Andersen" }, users);
+
+            var noUsers = roleProvider.FindUsersInRole("Admin", "Kaj");
+            Assert.Equal(0, noUsers.Length);
+        }
+    }
+}

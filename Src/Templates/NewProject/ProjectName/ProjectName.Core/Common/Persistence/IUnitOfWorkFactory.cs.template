@@ -1,0 +1,7 @@
+﻿namespace @(Model.CoreNamespace).Common.Persistence
+{
+    public interface IUnitOfWorkFactory
+    {
+        IUnitOfWork Create();
+    }
+}

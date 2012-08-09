@@ -1,0 +1,243 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Configuration.Provider;
+using System.Linq;
+using System.Web.Security;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Transactions;
+using Blah.Core.Common.Windsor;
+using Blah.Core.Domain.Model;
+using Blah.Core.Repositories;
+
+namespace Blah.Web.Common.Security
+{
+    public class NHibernateRoleProvider : RoleProvider
+    {
+        private IUnitOfWorkFactory UnitOfWorkFactory { get; set; }
+        private string applicationName;
+
+        public override string ApplicationName
+        {
+            get { return applicationName; }
+            set { applicationName = value; }
+        }
+
+        public override void Initialize(string name, NameValueCollection config)
+        {
+            base.Initialize(name, config);
+            UnitOfWorkFactory = Ioc.Container.Resolve<IUnitOfWorkFactory>();
+
+            applicationName = GetApplicationName(config);
+        }
+
+        private static string GetApplicationName(NameValueCollection config)
+        {
+            string appName = config["applicationName"];
+            if(String.IsNullOrEmpty(appName))
+            {
+                appName = System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath;
+            }
+
+            return appName;
+        }
+
+        public override bool IsUserInRole(string username, string roleName)
+        {
+            var userIsInRole = false;
+            using(var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var user = userRepository.FindByUserName(username);
+
+                    if (user != null)
+                    {
+                        userIsInRole = user.Roles.Any(r => r.Name.Equals(roleName));
+                    }
+                });
+            }
+            return userIsInRole;
+        }
+
+        public override string[] GetRolesForUser(string username)
+        {
+            var roles = new string[0];
+
+            using(var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var user = userRepository.FindByUserName(username);
+
+                    if (user != null)
+                    {
+                        roles = user.Roles.Select(r => r.Name).ToArray();
+                    }
+                });
+            }
+
+            return roles;
+        }
+
+        public override void CreateRole(string roleName)
+        {
+            if (RoleExists(roleName))
+                throw new ProviderException("Role name already exists.");
+
+            using(var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var role = new Role { Name = roleName };
+                    roleRepository.Add(role);
+                });
+            }
+        }
+
+        public override bool DeleteRole(string roleName, bool throwOnPopulatedRole)
+        {
+            if (!RoleExists(roleName))
+                throw new ProviderException("Role does not exist.");
+
+            using(var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var role = roleRepository.FindByName(roleName);
+                    roleRepository.Delete(role);
+                });
+            }
+            return true;
+        }
+
+        public override bool RoleExists(string roleName)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var role = roleRepository.FindByName(roleName);
+                    return role != null;
+                });
+            }
+        }
+
+        public override void AddUsersToRoles(string[] usernames, string[] roleNames)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    IList<Role> roles = new List<Role>();
+                    foreach (var roleName in roleNames)
+                    {
+                        var role = roleRepository.FindByName(roleName);
+                        roles.Add(role);
+                    }
+
+                    foreach (var userName in usernames)
+                    {
+                        var user = userRepository.FindByUserName(userName);
+                        foreach (var role in roles)
+                        {
+                            user.AddRole(role);
+                        }
+                    }
+                });
+            }
+        }
+
+        public override void RemoveUsersFromRoles(string[] usernames, string[] roleNames)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    IList<Role> roles = new List<Role>();
+                    foreach (var roleName in roleNames)
+                    {
+                        var role = roleRepository.FindByName(roleName);
+                        roles.Add(role);
+                    }
+
+                    foreach (var userName in usernames)
+                    {
+                        var user = userRepository.FindByUserName(userName);
+                        foreach (var role in roles)
+                        {
+                            user.RemoveRole(role);
+                        }
+                    }
+                });
+            }
+        }
+
+        public override string[] GetUsersInRole(string roleName)
+        {
+            var users = new string[0];
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+
+                    var role = roleRepository.FindByName(roleName);
+
+                    if (role != null)
+                    {
+                        users = role.Users.Select(r => r.UserName).ToArray();
+                    }
+                });
+            }
+
+            return users;
+        }
+
+        public override string[] GetAllRoles()
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+
+                    var roles = roleRepository.FindAll();
+
+                    return roles.Select(r => r.Name).ToArray();
+                });
+            }
+        }
+
+        public override string[] FindUsersInRole(string roleName, string usernameToMatch)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var roleRepository = new RoleRepository(unitOfWork);
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var role = roleRepository.FindByName(roleName);
+
+                    IList<User> users = userRepository.FindUsersContainingUserNameAndHavingRole(usernameToMatch, role);
+
+                    return users.Select(u => u.UserName).ToArray();
+                });
+            }            
+        }
+    }
+}

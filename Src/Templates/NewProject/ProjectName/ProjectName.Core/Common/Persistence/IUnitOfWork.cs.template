@@ -1,0 +1,9 @@
+﻿using System;
+
+namespace @(Model.CoreNamespace).Common.Persistence
+{
+    public interface IUnitOfWork : IDisposable
+    {
+        void SaveChanges();
+    }
+}

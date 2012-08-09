@@ -1,0 +1,120 @@
+using System;
+using @(Model.CoreNamespace).Common.Transactions;
+using Xunit;
+using Ploeh.AutoFixture;
+
+namespace @(Model.TestNamespace).Common.Transaction
+{
+    public class InsideTransactionsTests : PersistenceTest
+    {
+        private readonly FooRepository fooRepository;
+        private readonly Fixture fixture;
+
+        public InsideTransactionsTests()
+        {
+            fooRepository = new FooRepository(UnitOfWork);
+            fixture = new Fixture();
+        }
+
+        [Fact]
+        public void ShouldRollbackOnException()
+        {
+            try
+            {
+                Assert.Throws<Exception>(() => Inside.Transaction(UnitOfWork, () =>
+                {
+                    var FooEntity = fixture.CreateAnonymous<Foo>();
+                    fooRepository.Add(FooEntity);
+                    UnitOfWork.SaveChanges();
+
+                    throw new Exception();
+                }));
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+
+            using (var session = CreateSession())
+            {
+                var FooEntitys = session.QueryOver<Foo>().List();
+                Assert.Equal(0, FooEntitys.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldCommit()
+        {
+            Inside.Transaction(UnitOfWork, () =>
+            {
+                var FooEntity = fixture.CreateAnonymous<Foo>();
+                fooRepository.Add(FooEntity);
+                UnitOfWork.SaveChanges();
+            });
+
+            using (var session = CreateSession())
+            {
+                var FooEntitys = session.QueryOver<Foo>().List();
+                Assert.Equal(1, FooEntitys.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldHaveNestedTransactions()
+        {
+            Inside.Transaction(UnitOfWork, () =>
+            {
+                Inside.Transaction(UnitOfWork, () =>
+                {
+                    var FooEntity1 = fixture.CreateAnonymous<Foo>();
+                    fooRepository.Add(FooEntity1);
+                    UnitOfWork.SaveChanges();
+                });
+
+                var FooEntity2 = fixture.CreateAnonymous<Foo>();
+                fooRepository.Add(FooEntity2);
+                UnitOfWork.SaveChanges();
+            });
+
+            using (var session = CreateSession())
+            {
+                var FooEntitys = session.QueryOver<Foo>().List();
+                Assert.Equal(2, FooEntitys.Count);
+            }
+        }
+
+        [Fact]
+        public void ShouldHaveRollbackWhenNestedTransactionRollbacks()
+        {
+            try
+            {
+                Inside.Transaction(UnitOfWork, () =>
+                {
+                    Inside.Transaction(UnitOfWork, () =>
+                    {
+                        var FooEntity1 = fixture.CreateAnonymous<Foo>();
+                        fooRepository.Add(FooEntity1);
+                        UnitOfWork.SaveChanges();
+                        throw new Exception();
+                    });
+
+                    var FooEntity2 = fixture.CreateAnonymous<Foo>();
+                    fooRepository.Add(FooEntity2);
+                    UnitOfWork.SaveChanges();
+
+                });
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+
+
+            using (var session = CreateSession())
+            {
+                var FooEntitys = session.QueryOver<Foo>().List();
+                Assert.Equal(0, FooEntitys.Count);
+            }
+        }
+    }
+}

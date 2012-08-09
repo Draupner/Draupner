@@ -1,0 +1,22 @@
+﻿using System.Collections.Generic;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Domain.Model;
+
+namespace Blah.Core.Domain.Repositories
+{
+    public interface IUserRepository
+    {
+        IList<User> FindAll();
+        void Add(User user);
+        User Get(long id);
+        void Delete(User user);
+        long CountAll();
+        Page<User> FindPage(int pageNumber, int pageSize, string sortColumn, SortOrder sortOrder);
+
+        User FindByUserName(string userName);
+        string FindUserNameByEmail(string email);
+        Page<User> FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize);
+        Page<User> FindUsersByUserName(string userNameToMatch, int pageIndex, int pageSize);
+        IList<User> FindUsersContainingUserNameAndHavingRole(string usernameToMatch, Role role);
+    }
+}

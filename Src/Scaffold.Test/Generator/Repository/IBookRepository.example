@@ -1,0 +1,16 @@
+﻿using System.Collections.Generic;
+using Blah.Core.Common.Persistence;
+using Blah.Core.Domain.Model;
+
+namespace Blah.Core.Domain.Repositories
+{
+    public interface IBookRepository
+    {
+        Book Get(long id);
+        void Add(Book book);
+        void Delete(Book book);
+        IList<Book> FindAll();
+        Page<Book> FindPage(int pageNumber, int pageSize, string sortColumn, SortOrder sortOrder);
+        long CountAll();
+    }
+}

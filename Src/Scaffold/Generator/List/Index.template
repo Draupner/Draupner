@@ -1,0 +1,16 @@
+﻿@@model IPagination<@(Model.WebNamespace).Models.@(Model.Entity.Name)ViewModel>
+@@{
+    ViewBag.Title = "@(Model.Entity.Name)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<h2>@(Model.Entity.Name)s</h2>
+
+@@Html.Grid(Model).Sort((GridSortOptions)ViewData["sort"]).Columns(column => {
+@foreach(var property in Model.Entity.BasicProperties) {
+@:    column.For(item => item.@(property.Name)).Named("@(property.Name)");
+}
+}).Empty("No @(Model.Entity.Name)s found.").Attributes(@@class => "grid")
+
+@@Html.Pager((IPagination)Model)

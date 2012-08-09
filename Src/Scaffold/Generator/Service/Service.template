@@ -1,0 +1,6 @@
+﻿namespace @(Model.CoreNamespace).Services.Impl
+{
+    public class @(Model.ServiceName) : I@(Model.ServiceName)
+    {
+    }
+}

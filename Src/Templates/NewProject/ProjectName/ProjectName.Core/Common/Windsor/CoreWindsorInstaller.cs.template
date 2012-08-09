@@ -1,0 +1,21 @@
+﻿using Castle.MicroKernel.Registration;
+using Castle.MicroKernel.SubSystems.Configuration;
+using Castle.Windsor;
+using @(Model.CoreNamespace).Common.NHibernate;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Persistence.NHibernate;
+using NHibernate;
+
+namespace @(Model.CoreNamespace).Common.Windsor
+{
+    public class CoreWindsorInstaller : IWindsorInstaller
+    {
+        public void Install(IWindsorContainer container, IConfigurationStore store)
+        {
+            container.Register(Component.For<IUnitOfWork>().ImplementedBy<SharedNHibernateUnitOfWork>());
+            container.Register(Component.For<IUnitOfWorkFactory>().ImplementedBy<NHibernateUnitOfWorkFactory>());
+           
+            container.Register(Component.For<ISessionFactory>().Instance(NHibernateConfiguration.SessionFactory));
+        }
+    }
+}

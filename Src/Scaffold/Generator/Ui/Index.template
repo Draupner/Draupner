@@ -1,0 +1,33 @@
+﻿@@model IPagination<@(Model.WebNamespace).Models.@(Model.Entity.Name)ViewModel>
+@@{
+    ViewBag.Title = "@(Model.Entity.Name)";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@@section JavaScript
+{
+   <script type="text/javascript" src="@@Url.Content("/Scripts/crud.js")"></script>
+}
+
+<div id="dialog" title="Confirm Delete">
+  Are you sure you want to delete this?
+</div>
+
+<h2>@(Model.Entity.Name)s</h2>
+@@Html.ActionLink("Create New", "Create")
+
+@@Html.Grid(Model).Sort((GridSortOptions)ViewData["sort"]).Columns(column => {
+    column.For(item => Html.ActionLink(item.Id.ToString(), "Details", new { id = item.Id })).Named("Id");
+@foreach(var property in Model.Entity.BasicProperties) {
+if(property.Name != "Id" && !property.IsNullable) {
+@:    column.For(item => Html.ActionLink(item.@(property.Name).ToString(), "Details", new { id = item.Id })).Named("@(property.Name)");
+}
+if(property.Name != "Id" && property.IsNullable) {
+@:    column.For(item => item.@(property.Name) == null ? MvcHtmlString.Empty : Html.ActionLink(item.@(property.Name).ToString(), "Details", new { id = item.Id })).Named("@(property.Name)");
+}
+}
+    column.For(item => Html.ActionLink(" Edit ", "Edit", new { Id = item.Id })).Named("");
+    column.For(item => Html.ActionLink(" Delete ", "Delete", new { Id = item.Id}, new { @@class = "confirmDelete" })).Named("");
+
+}).Empty("No @(Model.Entity.Name)s found.").Attributes(@@class => "grid")
+
+@@Html.Pager((IPagination)Model)

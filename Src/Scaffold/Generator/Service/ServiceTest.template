@@ -1,0 +1,6 @@
+﻿namespace @(Model.TestNamespace).Services
+{
+    public class @(Model.ServiceName)Tests
+    {
+    }
+}

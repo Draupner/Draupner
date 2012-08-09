@@ -1,0 +1,12 @@
+﻿using @(Model.CoreNamespace).Common.Transactions;
+
+namespace @(Model.WebNamespace).Common.Transaction
+{
+    public class TransactionConfiguration
+    {
+        public void Configure()
+        {
+            TransactionRange.CreateTransactionRangeManager = (unitOfWork => new WebTransactionRangeManager(unitOfWork));
+        }
+    }
+}

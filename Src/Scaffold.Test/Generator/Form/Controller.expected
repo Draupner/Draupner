@@ -1,0 +1,41 @@
+﻿using System.Web.Mvc;
+using Blah.Core.Common.Transactions;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+using Blah.Web.Models;
+
+
+namespace Blah.Web.Controllers
+{
+    public class CreateBookController : AbstractController
+    {
+        private readonly IBookRepository bookRepository;
+
+        public CreateBookController(IBookRepository bookRepository)
+        {
+            this.bookRepository = bookRepository;
+        }
+
+		[Transaction]
+        public virtual ViewResult Index()
+        {
+            var createBookViewModel = new CreateBookViewModel();
+            return View(createBookViewModel);
+        }
+
+		[Transaction]
+        [HttpPost]
+        public virtual ActionResult Index(CreateBookViewModel createBookViewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(createBookViewModel);
+            }
+
+            var book = Map<CreateBookViewModel, Book>(createBookViewModel);
+            bookRepository.Add(book);
+
+            return RedirectToAction("Index");
+        }
+    }
+}

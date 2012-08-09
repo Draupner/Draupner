@@ -1,0 +1,32 @@
+﻿using Blah.Core.Domain.Model;
+using FluentNHibernate.Mapping;
+
+namespace Blah.Core.Common.NHibernate
+{
+    public class UserMap : ClassMap<User>
+    {
+        public UserMap()
+        {
+            Id(x => x.Id).GeneratedBy.Identity();
+            Map(x => x.UserName);
+            Map(x => x.Comment);
+            Map(x => x.Password);
+            Map(x => x.PasswordQuestion);
+            Map(x => x.PasswordAnswer);
+            Map(x => x.IsApproved);
+            Map(x => x.LastActivityDate);
+            Map(x => x.LastLoginDate);
+            Map(x => x.LastPasswordChangedDate);
+            Map(x => x.CreationDate);
+            Map(x => x.IsLockedOut);
+            Map(x => x.LastLockedOutDate);
+            Map(x => x.FailedPasswordAttemptCount);
+            Map(x => x.FailedPasswordAnswerAttemptCount);
+
+            Map(x => x.Email);
+
+            HasManyToMany(x => x.Roles)
+                .Cascade.All();
+        }
+    }
+}

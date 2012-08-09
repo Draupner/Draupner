@@ -1,0 +1,16 @@
+﻿using System.Collections.Generic;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Domain.Model;
+
+namespace @(Model.CoreNamespace).Domain.Repositories
+{
+    public interface I@(Model.Entity.Name)Repository
+    {
+        @(Model.Entity.Name) Get(long id);
+        void Add(@(Model.Entity.Name) @(Model.Entity.VariableName));
+        void Delete(@(Model.Entity.Name) @(Model.Entity.VariableName));
+        IList<@(Model.Entity.Name)> FindAll();
+        Page<@(Model.Entity.Name)> FindPage(int pageNumber, int pageSize, string sortColumn, SortOrder sortOrder);
+        long CountAll();
+    }
+}

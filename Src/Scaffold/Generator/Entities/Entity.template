@@ -1,0 +1,7 @@
+﻿namespace @(Model.CoreNamespace).Domain.Model
+{
+    public class @(Model.EntityName)
+    {
+        public virtual long Id { get; set; }
+    }
+}

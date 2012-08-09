@@ -1,0 +1,26 @@
+﻿@model IPagination<Blah.Web.Models.BookViewModel>
+@{
+    ViewBag.Title = "Book";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@section JavaScript
+{
+   <script type="text/javascript" src="@Url.Content("/Scripts/crud.js")"></script>
+}
+
+<div id="dialog" title="Confirm Delete">
+  Are you sure you want to delete this?
+</div>
+
+<h2>Books</h2>
+@Html.ActionLink("Create New", "Create")
+
+@Html.Grid(Model).Sort((GridSortOptions)ViewData["sort"]).Columns(column => {
+    column.For(item => Html.ActionLink(item.Id.ToString(), "Details", new { id = item.Id })).Named("Id");
+    column.For(item => item.Name == null ? MvcHtmlString.Empty : Html.ActionLink(item.Name.ToString(), "Details", new { id = item.Id })).Named("Name");
+    column.For(item => Html.ActionLink(" Edit ", "Edit", new { Id = item.Id })).Named("");
+    column.For(item => Html.ActionLink(" Delete ", "Delete", new { Id = item.Id}, new { @class = "confirmDelete" })).Named("");
+
+}).Empty("No Books found.").Attributes(@class => "grid")
+
+@Html.Pager((IPagination)Model)

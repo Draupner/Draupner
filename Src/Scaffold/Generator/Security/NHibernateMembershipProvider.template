@@ -1,0 +1,658 @@
+﻿using System;
+using System.Collections.Specialized;
+using System.Configuration.Provider;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Web.Security;
+using System.Security.Cryptography;
+using System.Text;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Transactions;
+using @(Model.CoreNamespace).Common.Windsor;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Repositories;
+
+namespace @(Model.WebNamespace).Common.Security
+{
+    public class NHibernateMembershipProvider : MembershipProvider
+    {
+        private IUnitOfWorkFactory UnitOfWorkFactory { get; set; }
+
+        private string applicationName;
+        private bool enablePasswordReset;
+        private bool enablePasswordRetrieval;
+        private bool requiresQuestionAndAnswer;
+        private bool requiresUniqueEmail;
+        private int maxInvalidPasswordAttempts;
+        private int passwordAttemptWindow;
+        private MembershipPasswordFormat passwordFormat;
+        private int minRequiredNonAlphanumericCharacters;
+        private int minRequiredPasswordLength;
+        private string passwordStrengthRegularExpression;
+
+        private enum FailureType
+        {
+            Password = 1,
+            PasswordAnswer = 2
+        }
+
+        public override string ApplicationName
+        {
+            get { return applicationName; }
+            set { applicationName = value; }
+        }
+
+        public override bool EnablePasswordReset
+        {
+            get { return enablePasswordReset; }
+        }
+
+        public override bool EnablePasswordRetrieval
+        {
+            get { return enablePasswordRetrieval; }
+        }
+
+        public override bool RequiresQuestionAndAnswer
+        {
+            get { return requiresQuestionAndAnswer; }
+        }
+
+        public override bool RequiresUniqueEmail
+        {
+            get { return requiresUniqueEmail; }
+        }
+
+        public override int MaxInvalidPasswordAttempts
+        {
+            get { return maxInvalidPasswordAttempts; }
+        }
+
+        public override int PasswordAttemptWindow
+        {
+            get { return passwordAttemptWindow; }
+        }
+
+        public override MembershipPasswordFormat PasswordFormat
+        {
+            get { return passwordFormat; }
+        }
+
+        public override int MinRequiredNonAlphanumericCharacters
+        {
+            get { return minRequiredNonAlphanumericCharacters; }
+        }
+
+        public override int MinRequiredPasswordLength
+        {
+            get { return minRequiredPasswordLength; }
+        }
+
+        public override string PasswordStrengthRegularExpression
+        {
+            get { return passwordStrengthRegularExpression; }
+        }
+
+
+        public override void Initialize(string name, NameValueCollection config)
+        {
+            if (config == null) throw new ArgumentNullException("config");
+            if (String.IsNullOrEmpty(name)) name = "NHibernateMembershipProvider";
+            if (String.IsNullOrEmpty(config["description"]))
+            {
+                config.Remove("description");
+                config.Add("description", "NHibernate Membership Provider");
+            }
+
+            base.Initialize(name, config);
+            ValidatingPassword += NHibernateMembershipProviderValidatingPassword;
+            SetConfigurationProperties(config);
+
+            UnitOfWorkFactory = Ioc.Container.Resolve<IUnitOfWorkFactory>();
+        }
+
+        private void SetConfigurationProperties(NameValueCollection config)
+        {
+            applicationName = GetConfigValue(config["applicationName"], System.Web.Hosting.HostingEnvironment.ApplicationVirtualPath);
+            maxInvalidPasswordAttempts = Convert.ToInt32(GetConfigValue(config["maxInvalidPasswordAttempts"], "5"));
+            passwordAttemptWindow = Convert.ToInt32(GetConfigValue(config["passwordAttemptWindow"], "10"));
+            minRequiredNonAlphanumericCharacters = Convert.ToInt32(GetConfigValue(config["minRequiredNonAlphanumericCharacters"], "1"));
+            minRequiredPasswordLength = Convert.ToInt32(GetConfigValue(config["minRequiredPasswordLength"], "7"));
+            passwordStrengthRegularExpression = Convert.ToString(GetConfigValue(config["passwordStrengthRegularExpression"], String.Empty));
+            enablePasswordReset = Convert.ToBoolean(GetConfigValue(config["enablePasswordReset"], "true"));
+            enablePasswordRetrieval = Convert.ToBoolean(GetConfigValue(config["enablePasswordRetrieval"], "true"));
+            requiresQuestionAndAnswer = Convert.ToBoolean(GetConfigValue(config["requiresQuestionAndAnswer"], "false"));
+            requiresUniqueEmail = Convert.ToBoolean(GetConfigValue(config["requiresUniqueEmail"], "true"));
+            SetPasswordFormat(config["passwordFormat"]);
+        }
+
+        private void SetPasswordFormat(string format)
+        {
+            switch (format)
+            {
+                case "Hashed":
+                    passwordFormat = MembershipPasswordFormat.Hashed;
+                    break;
+                default:
+                    throw new ProviderException("Password format not supported.");
+            }
+        }
+
+        private static string GetConfigValue(string configValue, string defaultValue)
+        {
+            if (String.IsNullOrEmpty(configValue))
+            {
+                return defaultValue;
+            }
+            return configValue;
+        }
+
+        public override bool ChangePassword(string username, string oldPassword, string newPassword)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+                    var user = userRepository.FindByUserName(username);
+
+                    if (!ValidateUser(user, oldPassword))
+                    {
+                        return false;
+                    }
+                    var args = new ValidatePasswordEventArgs(username, newPassword, false);
+                    OnValidatingPassword(args);
+                    if (args.Cancel)
+                    {
+                        if (args.FailureInformation != null)
+                        {
+                            throw args.FailureInformation;
+                        }
+                        throw new MembershipPasswordException("Change password canceled due to new password validation failure.");
+                    }
+
+                    user.Password = EncodePassword(newPassword);
+
+                    unitOfWork.SaveChanges();
+                    return true;
+                });
+            }
+        }
+
+        public override bool ChangePasswordQuestionAndAnswer(string username, string password, string newPwdQuestion,
+                                                             string newPwdAnswer)
+        {
+            throw new NotSupportedException("Changing password question and answer not supported");
+        }
+
+        public override MembershipUser CreateUser(string username, string password, string email,
+                                                  string passwordQuestion, string passwordAnswer, bool isApproved,
+                                                  object providerUserKey, out MembershipCreateStatus status)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                MembershipCreateStatus createStatus = MembershipCreateStatus.UserRejected;
+                MembershipUser membershipUser = Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var args = new ValidatePasswordEventArgs(username,
+                                                            password, true);
+                    OnValidatingPassword(args);
+                    if (args.Cancel)
+                    {
+                        createStatus = MembershipCreateStatus.InvalidPassword;
+                        return null;
+                    }
+                    if ((RequiresUniqueEmail &&
+                        (!String.IsNullOrEmpty(
+                            userRepository.FindUserNameByEmail(email)))))
+                    {
+                        createStatus = MembershipCreateStatus.DuplicateEmail;
+                        return null;
+                    }
+
+                    var existingUser = userRepository.FindByUserName(username);
+                    if (existingUser != null)
+                    {
+                        createStatus = MembershipCreateStatus.DuplicateUserName;
+                        return null;
+                    }
+
+                    var user = new User
+                                    {
+                                        UserName = username,
+                                        Password = EncodePassword(password),
+                                        Email = email,
+                                        PasswordQuestion = passwordQuestion,
+                                        PasswordAnswer =
+                                            EncodePassword(passwordAnswer),
+                                        IsApproved = isApproved,
+                                        Comment = String.Empty,
+                                        CreationDate = DateTime.Now
+                                    };
+
+                    userRepository.Add(user);
+                    createStatus = MembershipCreateStatus.Success;
+                    unitOfWork.SaveChanges();
+
+                    return ToMembershipUser(user);
+                });
+                status = createStatus;
+                return membershipUser;
+            }
+        }
+
+        public override bool DeleteUser(string username, bool deleteAllRelatedData)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                    {
+                        var userRepository = new UserRepository(unitOfWork);
+
+                        User user = userRepository.FindByUserName(username);
+                        if (user != null)
+                        {
+                            userRepository.Delete(user);
+                        }
+                        unitOfWork.SaveChanges();
+                    });
+            }
+            return true;
+        }
+
+        public override MembershipUserCollection GetAllUsers(int pageIndex, int pageSize, out int totalRecords)
+        {
+            var users = new MembershipUserCollection();
+            var total = 0;
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var userPage = userRepository.FindPage(pageIndex + 1, pageSize,
+                                                            "Id", SortOrder.Ascending);
+                    foreach (var user in userPage.Items)
+                    {
+                        users.Add(ToMembershipUser(user));
+                    }
+
+                    total = userPage.TotalItemCount;
+                });
+            }
+            totalRecords = total;
+            return users;
+        }
+
+        public override int GetNumberOfUsersOnline()
+        {
+            throw new NotSupportedException("Getting number of users not enabled");
+        }
+
+        public override string GetPassword(string username, string answer)
+        {
+            throw new NotSupportedException("Password retrieval not enabled");
+        }
+
+        public override MembershipUser GetUser(string username, bool userIsOnline)
+        {
+            MembershipUser membershipUser = null;
+
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    User user = userRepository.FindByUserName(username);
+                    if (user != null)
+                    {
+                        if (userIsOnline)
+                        {
+                            user.LastActivityDate = DateTime.Now;
+                        }
+                        membershipUser = ToMembershipUser(user);
+                    }
+                    unitOfWork.SaveChanges();
+                });
+            }
+
+            return membershipUser;
+        }
+
+        public override MembershipUser GetUser(object userId, bool userIsOnline)
+        {
+            MembershipUser membershipUser = null;
+
+            long id;
+            if (Int64.TryParse(userId.ToString(), out id))
+            {
+                using (var unitOfWork = UnitOfWorkFactory.Create())
+                {
+                    Inside.Transaction(unitOfWork, () =>
+                        {
+                            var userRepository = new UserRepository(unitOfWork);
+
+                            User u = userRepository.Get(id);
+                            if (u != null)
+                            {
+                                if (userIsOnline)
+                                {
+                                    u.LastActivityDate = DateTime.Now;
+                                }
+                                membershipUser = ToMembershipUser(u);
+                            }
+                            unitOfWork.SaveChanges();
+                        });
+                }
+
+            }
+
+            return membershipUser;
+        }
+
+        public override bool UnlockUser(string username)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+
+                    User user = userRepository.FindByUserName(username);
+                    if (user != null)
+                    {
+                        user.IsLockedOut = false;
+                    }
+                    unitOfWork.SaveChanges();
+                });
+            }
+            return true;
+        }
+
+        public override string GetUserNameByEmail(string email)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+                    return userRepository.FindUserNameByEmail(email);
+                });
+            }
+        }
+
+        public override string ResetPassword(string username, string answer)
+        {
+            try
+            {
+                using (var unitOfWork = UnitOfWorkFactory.Create())
+                {
+                    return Inside.Transaction(unitOfWork, () =>
+                    {
+                        if (!EnablePasswordReset)
+                        {
+                            throw new NotSupportedException(
+                                "Password Reset is not enabled.");
+                        }
+
+                        var userRepository = new UserRepository(unitOfWork);
+
+                        User user = userRepository.FindByUserName(username);
+
+                        if ((answer == null) && (RequiresQuestionAndAnswer))
+                        {
+                            UpdateFailureCount(user, FailureType.PasswordAnswer);
+                            throw new ProviderException(
+                                "Password answer required for password Reset.");
+                        }
+
+                        string newPassword = "#" +
+                                            Guid.NewGuid().ToString().Substring(0, 8) +
+                                            "$";
+                        var args = new ValidatePasswordEventArgs(username,
+                                                                newPassword, false);
+                        OnValidatingPassword(args);
+                        if (args.Cancel)
+                        {
+                            if (args.FailureInformation != null)
+                            {
+                                throw args.FailureInformation;
+                            }
+                            throw new MembershipPasswordException(
+                                "Reset password canceled due to password validation failure.");
+                        }
+
+                        if (user.IsLockedOut)
+                        {
+                            throw new MembershipPasswordException(
+                                "The supplied user is locked out.");
+                        }
+                        string passwordAnswer = user.PasswordAnswer;
+                        if (RequiresQuestionAndAnswer &&
+                            (!CheckPassword(answer, passwordAnswer)))
+                        {
+                            UpdateFailureCount(user, FailureType.PasswordAnswer);
+                            throw new MembershipPasswordException(
+                                "Incorrect password answer.");
+                        }
+                        user.Password = EncodePassword(newPassword);
+
+                        unitOfWork.SaveChanges();
+                        return newPassword;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new MembershipPasswordException(ex.Message);
+            }
+        }
+
+        public override void UpdateUser(MembershipUser membershipUser)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    User user = userRepository.FindByUserName(membershipUser.UserName);
+                    user.Email = membershipUser.Email;
+                    user.Comment = membershipUser.Comment;
+                    user.IsApproved = membershipUser.IsApproved;
+
+                    unitOfWork.SaveChanges();
+                });
+            }
+        }
+
+        public override bool ValidateUser(string username, string password)
+        {
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                return Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+                    var user = userRepository.FindByUserName(username);
+
+                    var isValidUser = ValidateUser(user, password);
+                    unitOfWork.SaveChanges();
+                    return isValidUser;
+                });
+            }
+        }
+
+        private static bool ValidateUser(User user, string password)
+        {
+            bool isValid = false;
+
+            if (user != null)
+            {
+                string storedPassword = user.Password;
+                bool isApproved = user.IsApproved;
+                if (CheckPassword(password, storedPassword))
+                {
+                    if (isApproved)
+                    {
+                        isValid = true;
+                        user.LastLoginDate = DateTime.Now;
+                    }
+                }
+                else
+                {
+                    UpdateFailureCount(user, FailureType.Password);
+                }
+            }
+
+            return isValid;
+        }
+
+        public override MembershipUserCollection FindUsersByName(string usernameToMatch, int pageIndex, int pageSize,
+                                                                 out int totalRecords)
+        {
+            var users = new MembershipUserCollection();
+            var total = 0;
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var foundUsers =
+                        userRepository.FindUsersByUserName(usernameToMatch,
+                                                            (pageIndex + 1), pageSize);
+                    total = foundUsers.TotalItemCount;
+                    foreach (User u in foundUsers.Items)
+                    {
+                        users.Add(ToMembershipUser(u));
+                    }
+                });
+            }
+            totalRecords = total;
+            return users;
+        }
+
+        public override MembershipUserCollection FindUsersByEmail(string emailToMatch, int pageIndex, int pageSize,
+                                                                  out int totalRecords)
+        {
+            var users = new MembershipUserCollection();
+            var total = 0;
+            using (var unitOfWork = UnitOfWorkFactory.Create())
+            {
+                Inside.Transaction(unitOfWork, () =>
+                {
+                    var userRepository = new UserRepository(unitOfWork);
+
+                    var usersFound = userRepository.FindUsersByEmail(emailToMatch,
+                                                                    (pageIndex + 1),
+                                                                    pageSize);
+                    total = usersFound.TotalItemCount;
+                    foreach (User u in usersFound.Items)
+                    {
+                        users.Add(ToMembershipUser(u));
+                    }
+                });
+            }
+            totalRecords = total;
+            return users;
+        }
+
+        private MembershipUser ToMembershipUser(User user)
+        {
+            var creationDate = (DateTime) user.CreationDate;
+            var lastLoginDate = new DateTime();
+            if (user.LastLoginDate != null)
+            {
+                lastLoginDate = (DateTime) user.LastLoginDate;
+            }
+            var lastActivityDate = new DateTime();
+            if (user.LastActivityDate != null)
+            {
+                lastActivityDate = (DateTime) user.LastActivityDate;
+            }
+            var lastPasswordChangedDate = new DateTime();
+            if (user.LastPasswordChangedDate != null)
+            {
+                lastPasswordChangedDate = (DateTime) user.LastPasswordChangedDate;
+            }
+            var lastLockedOutDate = new DateTime();
+            if (user.LastLockedOutDate != null)
+            {
+                lastLockedOutDate = (DateTime) user.LastLockedOutDate;
+            }
+
+            var membershipUser = new MembershipUser(
+                Name,
+                user.UserName,
+                user.Id,
+                user.Email,
+                user.PasswordQuestion,
+                user.Comment,
+                user.IsApproved,
+                user.IsLockedOut,
+                creationDate,
+                lastLoginDate,
+                lastActivityDate,
+                lastPasswordChangedDate,
+                lastLockedOutDate
+                );
+            return membershipUser;
+        }
+
+        private static void UpdateFailureCount(User user, FailureType failureType)
+        {
+            if (user != null)
+            {
+                if (failureType == FailureType.Password) user.FailedPasswordAttemptCount++;
+                else user.FailedPasswordAnswerAttemptCount++;
+            }
+        }
+
+        private void NHibernateMembershipProviderValidatingPassword(object sender, ValidatePasswordEventArgs e)
+        {
+            Char[] pwChar = e.Password.ToCharArray();
+            if (e.Password.Length < minRequiredPasswordLength) e.Cancel = true;
+            if (!String.IsNullOrEmpty(passwordStrengthRegularExpression))
+            {
+                var r = new Regex(passwordStrengthRegularExpression);
+                if (!r.IsMatch(e.Password)) e.Cancel = true;
+            }
+            int iNumNonAlpha = pwChar.Count(c => !char.IsLetterOrDigit(c));
+            if (iNumNonAlpha < minRequiredNonAlphanumericCharacters) e.Cancel = true;
+        }
+
+        private static bool CheckPassword(string password, string expectedPassword)
+        {
+            string pass1 = EncodePassword(password);
+            string pass2 = expectedPassword;
+
+            return pass1 == pass2;
+        }
+
+        public static string EncodePassword(string password)
+        {
+            if(password == null)
+            {
+                return "";
+            }
+
+            var pass = Encoding.Unicode.GetBytes(password);
+            var salt = Convert.FromBase64String("1D1631792C6246B48A64142E1A1FA29F");
+            var all = new byte[salt.Length + pass.Length];
+
+            Buffer.BlockCopy(salt, 0, all, 0, salt.Length);
+            Buffer.BlockCopy(pass, 0, all, salt.Length, pass.Length);
+
+            var hashAlgorithm = HashAlgorithm.Create("SHA1");
+            if (hashAlgorithm == null)
+            {
+                throw new ProviderException("Could not create a hash algorithm");
+            }
+
+            return Convert.ToBase64String(hashAlgorithm.ComputeHash(all));
+        }
+    }
+}

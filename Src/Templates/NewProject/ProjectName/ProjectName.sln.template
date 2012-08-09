@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "@(Model.WebNamespace)", "@(Model.WebNamespace)\@(Model.WebNamespace).csproj", "{400A6ABB-ADE1-4338-BB23-ECB72DB8A7ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "@(Model.CoreNamespace)", "@(Model.CoreNamespace)\@(Model.CoreNamespace).csproj", "{C97707D6-B7CD-440F-A629-839001077A8C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "@(Model.TestNamespace)", "@(Model.TestNamespace)\@(Model.TestNamespace).csproj", "{A79A3D7D-8722-4830-BC95-B3257879D1C3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{400A6ABB-ADE1-4338-BB23-ECB72DB8A7ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{400A6ABB-ADE1-4338-BB23-ECB72DB8A7ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{400A6ABB-ADE1-4338-BB23-ECB72DB8A7ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{400A6ABB-ADE1-4338-BB23-ECB72DB8A7ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C97707D6-B7CD-440F-A629-839001077A8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C97707D6-B7CD-440F-A629-839001077A8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C97707D6-B7CD-440F-A629-839001077A8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C97707D6-B7CD-440F-A629-839001077A8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A79A3D7D-8722-4830-BC95-B3257879D1C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A79A3D7D-8722-4830-BC95-B3257879D1C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A79A3D7D-8722-4830-BC95-B3257879D1C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A79A3D7D-8722-4830-BC95-B3257879D1C3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

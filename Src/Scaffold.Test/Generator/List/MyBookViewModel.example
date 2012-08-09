@@ -1,0 +1,8 @@
+﻿namespace Blah.Web.Models
+{
+    public class MyBookViewModel
+    {
+		public long Id { get; set; }
+		public string Name { get; set; }
+    }
+}

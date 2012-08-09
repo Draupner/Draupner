@@ -1,0 +1,14 @@
+﻿using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Persistence.NHibernate;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+
+namespace Blah.Core.Repositories
+{
+    public class BookRepository : GenericNHibernateRepository<Book>, IBookRepository
+    {
+        public BookRepository(IUnitOfWork unitOfWork) : base((NHibernateUnitOfWork) unitOfWork)
+        {
+        }
+    }
+}

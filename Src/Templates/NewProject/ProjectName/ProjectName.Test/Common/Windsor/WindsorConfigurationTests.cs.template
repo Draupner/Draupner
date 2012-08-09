@@ -1,0 +1,51 @@
+﻿using System.Web.Mvc;
+using @(Model.CoreNamespace).Common.Windsor;
+using @(Model.CoreNamespace).Common.NHibernate;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.WebNamespace).Common.Windsor;
+using Castle.Windsor;
+using NHibernate;
+using Xunit;
+using Rhino.Mocks;
+using System;
+
+namespace @(Model.TestNamespace).Common.Windsor
+{
+    public class WindsorConfigurationTests : IDisposable 
+    {
+        private readonly MockRepository mocks;
+        private readonly WindsorConfiguration windsorConfiguration;
+        private readonly IWindsorContainer container;
+
+        public WindsorConfigurationTests()
+        {
+            mocks = new MockRepository();
+
+            var sessionFactoryMock = mocks.DynamicMock<ISessionFactory>();
+            NHibernateConfiguration.SessionFactory = sessionFactoryMock; 
+            
+            windsorConfiguration = new WindsorConfiguration();
+            windsorConfiguration.Configure();
+            container = Ioc.Container;
+		}
+
+        [Fact]
+        public void ShouldSetControllerFactory()
+        {
+            Assert.True(ControllerBuilder.Current.GetControllerFactory() is WindsorControllerFactory);
+        }
+
+        [Fact]
+        public void ShouldRegisterDependencies()
+        {
+            Assert.NotNull(container.Resolve<IUnitOfWork>());
+            Assert.NotNull(container.Resolve<IUnitOfWorkFactory>());
+            Assert.NotNull(container.Resolve<ISessionFactory>());
+        }
+
+		public void Dispose()
+        {
+            Ioc.Container = null;
+        }
+    }
+}

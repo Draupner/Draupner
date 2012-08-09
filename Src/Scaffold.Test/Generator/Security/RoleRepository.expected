@@ -1,0 +1,19 @@
+﻿using Blah.Core.Common.Persistence;
+using Blah.Core.Common.Persistence.NHibernate;
+using Blah.Core.Domain.Model;
+using Blah.Core.Domain.Repositories;
+
+namespace Blah.Core.Repositories
+{
+    public class RoleRepository : GenericNHibernateRepository<Role>, IRoleRepository
+    {
+        public RoleRepository(IUnitOfWork unitOfWork) : base((NHibernateUnitOfWork) unitOfWork)
+        {
+        }
+
+        public Role FindByName(string name)
+        {
+            return Session.QueryOver<Role>().Where(r => r.Name == name).SingleOrDefault();
+        }
+    }
+}

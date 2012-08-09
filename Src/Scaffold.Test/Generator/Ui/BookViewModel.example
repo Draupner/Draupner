@@ -1,0 +1,10 @@
+﻿using System;
+
+namespace Blah.Web.Models
+{
+    public class BookViewModel
+    {
+		public long Id { get; set; }
+		public string Name { get; set; }
+    }
+}

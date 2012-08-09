@@ -1,0 +1,27 @@
+﻿using System.Threading;
+using @(Model.CoreNamespace).Common.Persistence;
+
+namespace @(Model.CoreNamespace).Common.Transactions
+{
+    public class ThreadLocalTransactionRangeManager : TransactionRangeManager
+    {
+        private static readonly ThreadLocal<int> nested = new ThreadLocal<int>();
+        private static readonly ThreadLocal<bool> nestedHasNotCompleted = new ThreadLocal<bool>();
+
+        public ThreadLocalTransactionRangeManager(IUnitOfWork unitOfWork) : base(unitOfWork)
+        {
+        }
+
+        protected override int Nested
+        {
+            get { return nested.Value; }
+            set { nested.Value = value; }
+        }
+
+        protected override bool NestedHasNotCompleted
+        {
+            get { return nestedHasNotCompleted.Value; }
+            set { nestedHasNotCompleted.Value = value; }
+        }
+    }
+}

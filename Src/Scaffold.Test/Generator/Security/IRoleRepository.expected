@@ -1,0 +1,11 @@
+﻿using Blah.Core.Domain.Model;
+
+namespace Blah.Core.Domain.Repositories
+{
+    public interface IRoleRepository
+    {
+        void Add(Role role);
+        Role FindByName(string name);
+        void Delete(Role role);
+    }
+}

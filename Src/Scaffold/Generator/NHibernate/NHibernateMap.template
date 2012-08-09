@@ -1,0 +1,24 @@
+﻿using FluentNHibernate.Mapping;
+using @(Model.CoreNamespace).Domain.Model;
+
+namespace @(Model.CoreNamespace).Common.NHibernate
+{
+    public class @(Model.Entity.Name)Map : ClassMap<@(Model.Entity.Name)>
+    {
+        public @(Model.Entity.Name)Map()
+        {
+            Id(x => x.Id);
+            @foreach (var property in Model.Entity.BasicProperties) {
+			if(property.Name != "Id") {
+            @:Map(x => x.@(property.Name));
+			}
+			}
+			@foreach (var property in Model.Entity.ReferenceProperties) {
+            @:References(x => x.@(property.Name));
+			}
+			@foreach (var property in Model.Entity.CollectionProperties) {
+            @:HasMany(x => x.@(property.Name));
+			}
+        }
+    }
+}

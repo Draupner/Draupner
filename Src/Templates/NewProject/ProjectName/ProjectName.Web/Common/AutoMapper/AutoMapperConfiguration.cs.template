@@ -1,0 +1,14 @@
+﻿using System.Collections.Generic;
+using AutoMapper;
+using MvcContrib.Pagination;
+using @(Model.CoreNamespace).Common.Persistence;
+
+namespace @(Model.WebNamespace).Common.AutoMapper
+{
+    public class AutoMapperConfiguration
+    {
+        public void Configure()
+        {
+        }
+    }
+}

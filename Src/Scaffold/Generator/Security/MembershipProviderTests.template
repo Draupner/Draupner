@@ -1,0 +1,572 @@
+﻿using System;
+using System.Web.Security;
+using System.Collections.Specialized;
+using Castle.MicroKernel.Registration;
+using Castle.Windsor;
+using Ploeh.AutoFixture;
+using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Windsor;
+using @(Model.WebNamespace).Common.Security;
+using @(Model.CoreNamespace).Domain.Model;
+using Xunit;
+
+namespace @(Model.TestNamespace).Common.Security
+{
+    public class MembershipProviderTests : PersistenceTest
+    {
+        private readonly NHibernateMembershipProvider membershipProvider;
+        private Fixture fixture;
+
+        public MembershipProviderTests()
+        {
+            fixture = new Fixture();
+            var unitOfWorkFactory = new UnitOfWorkFactoryStub(CreateUnitOfWork);
+            Ioc.Container = new WindsorContainer();
+            Ioc.Container.Register(Component.For<IUnitOfWorkFactory>().Instance(unitOfWorkFactory));
+
+            membershipProvider = new NHibernateMembershipProvider();
+            InitializeMemberShipProvider();
+        }
+
+        private void InitializeMemberShipProvider()
+        {
+            var config = new NameValueCollection
+                             {
+                                 {"maxInvalidPasswordAttempts", "3"},
+                                 {"passwordAttemptWindow", "10"},
+                                 {"minRequiredNonAlphanumericCharacters", "0"},
+                                 {"minRequiredPasswordLength", "1"},
+                                 {"passwordStrengthRegularExpression", ""},
+                                 {"enablePasswordReset", "true"},
+                                 {"enablePasswordRetrieval", "true"},
+                                 {"requiresQuestionAndAnswer", "false"},
+                                 {"requiresUniqueEmail", "true"},
+                                 {"passwordFormat", "Hashed"}
+                             };
+            membershipProvider.Initialize("AspNetSqlMembershipProvider", config);
+        }
+
+        [Fact]
+        public void ShouldChangePassword()
+        {
+            using(var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "Foo")
+                    .With(x => x.Password, NHibernateMembershipProvider.EncodePassword("Bar"))
+                    .CreateAnonymous();
+
+                session.Save(user);
+            }
+            var passwordChanged = membershipProvider.ChangePassword("Foo", "Bar", "Rab");
+            Assert.True(passwordChanged);
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "Foo").SingleOrDefault();
+                Assert.Equal(NHibernateMembershipProvider.EncodePassword("Rab"), user.Password);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotChangePasswordSinceOldPasswordIsWrong()
+        {
+            using (var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "Foo")
+                    .With(x => x.Password, NHibernateMembershipProvider.EncodePassword("Bar"))
+                    .CreateAnonymous();
+
+                session.Save(user);
+            }
+            var passwordChanged = membershipProvider.ChangePassword("Foo", "Wrong", "Rab");
+            Assert.False(passwordChanged);
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "Foo").SingleOrDefault();
+                Assert.Equal(NHibernateMembershipProvider.EncodePassword("Bar"), user.Password);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotChangePasswordSinceNewPasswordIsNotValid()
+        {
+            using (var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "Foo")
+                    .With(x => x.Password, NHibernateMembershipProvider.EncodePassword("Bar"))
+                    .CreateAnonymous();
+
+                session.Save(user);
+            }
+
+            Assert.Throws<MembershipPasswordException>(() => {
+                membershipProvider.ChangePassword("Foo", "Bar", "");
+            });
+
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "Foo").SingleOrDefault();
+                Assert.Equal(NHibernateMembershipProvider.EncodePassword("Bar"), user.Password);
+            }
+        }
+
+        public void ShouldNotChangePasswordQuestionAndAnswer()
+        {
+            Assert.Throws<NotSupportedException>(() =>
+            {
+                membershipProvider.ChangePasswordQuestionAndAnswer("", "", "", "");
+            });
+        }
+
+        [Fact]
+        public void ShouldCreateUser()
+        {
+            MembershipCreateStatus status;
+            membershipProvider.CreateUser("rna", "12345", "rna@test.com", "", "", true, null, out status);
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.NotNull(user);
+                Assert.Equal("rna", user.UserName);
+                Assert.Equal("rna@test.com", user.Email);
+                Assert.Equal(NHibernateMembershipProvider.EncodePassword("12345"), user.Password);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotCreateUserSincePasswordIsInvalid()
+        {
+            MembershipCreateStatus status;
+            membershipProvider.CreateUser("rna", "", "rna@test.com", "", "", true, null, out status);
+
+            Assert.Equal(MembershipCreateStatus.InvalidPassword, status);
+
+            using (var session = CreateSession())
+            {
+                var userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(0, userCount);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotCreateUserSinceEmailIsNotUnique()
+        {
+            using (var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.Email, "rna@test.com")
+                    .CreateAnonymous();
+                session.Save(user);
+                session.Flush();
+            }
+            MembershipCreateStatus status;
+            membershipProvider.CreateUser("rna", "123456", "rna@test.com", "", "", true, null, out status);
+
+            Assert.Equal(MembershipCreateStatus.DuplicateEmail, status);
+
+            using (var session = CreateSession())
+            {
+                var userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(1, userCount);
+            }
+        }
+
+        [Fact]
+        public void ShouldNotCreateUserSinceUserNameIsNotUnique()
+        {
+            using (var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "rna")
+                    .CreateAnonymous();
+
+                session.Save(user);
+                session.Flush();
+            }
+            MembershipCreateStatus status;
+            membershipProvider.CreateUser("rna", "123456", "rna@test.com", "", "", true, null, out status);
+
+            Assert.Equal(MembershipCreateStatus.DuplicateUserName, status);
+
+            using (var session = CreateSession())
+            {
+                var userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(1, userCount);
+            }
+        }
+
+        [Fact]
+        public void ShouldDeleteUser()
+        {
+            using (var session = CreateSession())
+            {
+                var user = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "rna")
+                    .CreateAnonymous();
+                session.Save(user);
+                session.Flush();
+            }
+            membershipProvider.DeleteUser("rna", true);
+
+            using (var session = CreateSession())
+            {
+                var userCount = session.QueryOver<User>().RowCount();
+                Assert.Equal(0, userCount);
+            }
+        }
+
+        [Fact]
+        public void ShouldGetAllUsers()
+        {
+            using (var session = CreateSession())
+            {
+                var user1 = fixture.Build<User>().Without(x => x.Roles).CreateAnonymous();
+                var user2 = fixture.Build<User>().Without(x => x.Roles).CreateAnonymous();
+                var user3 = fixture.Build<User>().Without(x => x.Roles).CreateAnonymous();
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+
+                session.Flush();
+            }
+            int total;
+            var page1 = membershipProvider.GetAllUsers(0, 2, out total);
+            Assert.Equal(2, page1.Count);
+            Assert.Equal(3, total);
+
+            var page2 = membershipProvider.GetAllUsers(1, 2, out total);
+            Assert.Equal(1, page2.Count);
+            Assert.Equal(3, total);
+        }
+
+        [Fact]
+        public void ShouldNotGetNumberOfUsersOnline()
+        {
+            Assert.Throws<NotSupportedException>(() =>
+            {
+                membershipProvider.GetNumberOfUsersOnline();
+            });
+        }
+
+        public void ShouldNotGetPassword()
+        {
+            Assert.Throws<NotSupportedException>(() =>
+            {
+                membershipProvider.GetPassword("foo", "bar");
+            });
+        }
+
+        [Fact]
+        public void ShouldGetUser()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "rna")
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+
+                session.Flush();
+            }
+
+            var user = membershipProvider.GetUser("rna", true);
+            Assert.NotNull(user);
+            Assert.Equal("rna", user.UserName);
+        }
+
+        [Fact]
+        public void ShouldUnlockUser()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.IsLockedOut, true)
+                    .With(x => x.UserName, "rna")
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+
+                session.Flush();
+            }
+
+            var isUnlocked = membershipProvider.UnlockUser("rna");
+            Assert.True(isUnlocked);
+
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().SingleOrDefault();
+
+                Assert.Equal("rna", user.UserName);
+                Assert.Equal(false, user.IsLockedOut);
+            }           
+        }
+
+        [Fact]
+        public void ShouldGetUserNameByEmail()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.Email, "rna@test.com")
+                    .With(x => x.UserName, "rna")
+                    .CreateAnonymous();
+                session.Save(newUser);
+
+                session.Flush();
+            }
+
+            var userName = membershipProvider.GetUserNameByEmail("rna@test.com");
+            Assert.NotNull(userName);
+            Assert.Equal("rna", userName);
+        }
+
+        [Fact]
+        public void ShouldResetPassword()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.IsLockedOut, false)
+                    .With(x => x.UserName, "rna")
+                    .With(x => x.Password, NHibernateMembershipProvider.EncodePassword("oldPassword"))
+                    .CreateAnonymous();
+                session.Save(newUser);
+
+                session.Flush();
+            }
+
+            var newPassword = membershipProvider.ResetPassword("rna", null);
+
+            Assert.NotNull(newPassword);
+
+            using(var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.NotEqual(NHibernateMembershipProvider.EncodePassword("oldPassword"), user.Password);
+                Assert.Equal(NHibernateMembershipProvider.EncodePassword(newPassword), user.Password);
+            }
+        }
+
+
+        [Fact]
+        public void ShouldNotResetPasswordSinceUserIsLockedOut()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.IsLockedOut, true)
+                    .With(x => x.UserName, "rna")
+                    .With(x => x.Password, "oldPassword")
+                    .CreateAnonymous();
+                session.Save(newUser);
+
+                session.Flush();
+            }
+
+            Assert.Throws<MembershipPasswordException>(() =>
+            {
+
+                membershipProvider.ResetPassword("rna", null);
+            });
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.Equal("oldPassword", user.Password);
+            }
+        }
+
+        [Fact]
+        public void ShouldUpdateUser()
+        {
+            long userId;
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.IsLockedOut, true)
+                    .With(x => x.UserName, "rna")
+                    .With(x => x.Password, "oldPassword")
+                    .With(x => x.Email, "old@test.com")
+                    .With(x => x.IsApproved, false)
+                    .With(x => x.IsLockedOut, true)
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+
+                session.Flush();
+                userId = newUser.Id;
+            }
+
+            var membershipUser = new MembershipUser(
+                "AspNetSqlMembershipProvider",
+                "rna",
+                userId,
+                "new@test.com",
+                "",
+                "Blah",
+                true,
+                false,
+                DateTime.Now,
+                DateTime.Now,
+                DateTime.Now,
+                DateTime.Now,
+                DateTime.Now);
+            membershipProvider.UpdateUser(membershipUser);
+
+            using (var session = CreateSession())
+            {
+                var user = session.QueryOver<User>().Where(u => u.UserName == "rna").SingleOrDefault();
+                Assert.Equal("new@test.com", user.Email);
+                Assert.Equal(true, user.IsApproved);
+                Assert.Equal("Blah", user.Comment);
+            }            
+        }
+
+        [Fact]
+        public void ShouldValidateUser()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "rna")
+                    .With(x => x.Password, NHibernateMembershipProvider.EncodePassword("123"))
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+                session.Flush();
+            }
+
+            var isValidUser = membershipProvider.ValidateUser("rna", "123");
+            Assert.True(isValidUser);
+        }
+
+        [Fact]
+        public void ShouldNotValidateUserSincePasswordIsWrong()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "rna")
+                    .With(x => x.Password, "Bar")
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+                session.Flush();
+            }
+
+            var isValidUser = membershipProvider.ValidateUser("rna", "Foo");
+            Assert.False(isValidUser);
+        }
+
+        [Fact]
+        public void ShouldNotValidateUserSinceUsernameIsWrong()
+        {
+            using (var session = CreateSession())
+            {
+                var newUser = fixture.Build<User>()
+                    .Without(x => x.Roles)
+                    .With(x => x.UserName, "Foo")
+                    .With(x => x.Password, "Bar")
+                    .CreateAnonymous();
+
+                session.Save(newUser);
+                session.Flush();
+            }
+
+            var isValidUser = membershipProvider.ValidateUser("Bar", "123");
+            Assert.False(isValidUser);
+        }
+
+        [Fact]
+        public void ShouldFindUsersByName()
+        {
+            using (var session = CreateSession())
+            {
+                var user1 = fixture.Build<User>().Without(x => x.Roles).With(x => x.UserName, "Martin Jensen").CreateAnonymous();
+                var user2 = fixture.Build<User>().Without(x => x.Roles).With(x => x.UserName, "Rasmus Andersen").CreateAnonymous();
+                var user3 = fixture.Build<User>().Without(x => x.Roles).With(x => x.UserName, "Jens Hansen").CreateAnonymous();
+                var user4 = fixture.Build<User>().Without(x => x.Roles).With(x => x.UserName, "Jens Andersen").CreateAnonymous();
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+                session.Save(user4);
+                session.Flush();
+            }
+
+            int total;
+            var userPage1 = membershipProvider.FindUsersByName("jen", 0, 2, out total);
+            Assert.Equal(2, userPage1.Count);
+            Assert.Equal(3, total);
+            
+            var userPage2 = membershipProvider.FindUsersByName("jen", 1, 2, out total);
+            Assert.Equal(1, userPage2.Count);
+            Assert.Equal(3, total);
+        }
+
+        [Fact]
+        public void ShouldFindUsersByEmail()
+        {
+            using (var session = CreateSession())
+            {
+                var user1 = fixture.Build<User>().Without(x => x.Roles).With(x => x.Email, "foo@bar.com").CreateAnonymous();
+                var user2 = fixture.Build<User>().Without(x => x.Roles).With(x => x.Email, "rna@test.com").CreateAnonymous();
+                var user3 = fixture.Build<User>().Without(x => x.Roles).With(x => x.Email, "bar@foo.com").CreateAnonymous();
+                var user4 = fixture.Build<User>().Without(x => x.Roles).With(x => x.Email, "com@foo.bar").CreateAnonymous();
+
+                session.Save(user1);
+                session.Save(user2);
+                session.Save(user3);
+                session.Save(user4);
+                session.Flush();
+            }
+
+            int total;
+            var userPage1 = membershipProvider.FindUsersByEmail("foo", 0, 2, out total);
+            Assert.Equal(2, userPage1.Count);
+            Assert.Equal(3, total);
+
+            var userPage2 = membershipProvider.FindUsersByEmail("foo", 1, 2, out total);
+            Assert.Equal(1, userPage2.Count);
+            Assert.Equal(3, total);
+        }
+    }
+
+    public class UnitOfWorkFactoryStub : IUnitOfWorkFactory
+    {
+        private readonly Func<IUnitOfWork> unitOfWorkCreator;
+
+        public UnitOfWorkFactoryStub(Func<IUnitOfWork> unitOfWorkCreator)
+        {
+            this.unitOfWorkCreator = unitOfWorkCreator;
+        }
+
+        public IUnitOfWork Create()
+        {
+            return unitOfWorkCreator();
+        }
+    }
+}

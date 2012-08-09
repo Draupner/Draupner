@@ -1,0 +1,98 @@
+﻿using System;
+using System.Web.Mvc;
+using Blah.Web.Common.Security;
+using Blah.Web.Models;
+
+namespace Blah.Web.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly IAuthentication authentication;
+
+        public AccountController(IAuthentication authentication)
+        {
+            this.authentication = authentication;
+        }
+
+        public virtual ActionResult LogOn()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public virtual ActionResult LogOn(LogOnViewModel model, string returnUrl)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            if (!authentication.ValidateUser(model.UserName, model.Password))
+            {
+                ModelState.AddModelError("PasswordIncorrect", "The user name or password provided is incorrect.");
+                return View(model);
+
+            }
+
+            authentication.LogOn(model.UserName, model.RememberMe);
+
+            if (IsValidReturnUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction("Index", "Home");
+        }
+
+        private bool IsValidReturnUrl(string returnUrl)
+        {
+            return Url.IsLocalUrl(returnUrl) && returnUrl.Length > 1 && returnUrl.StartsWith("/")
+                   && !returnUrl.StartsWith("//") && !returnUrl.StartsWith("/\\");
+        }
+
+        public virtual ActionResult LogOff()
+        {
+            authentication.LogOff();
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        [Authorize]
+        public virtual ActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        public virtual ActionResult ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            bool changePasswordSucceeded;
+            try
+            {
+                changePasswordSucceeded = authentication.ChangePassword(User.Identity.Name, model.OldPassword, model.NewPassword);
+            }
+            catch (Exception)
+            {
+                changePasswordSucceeded = false;
+            }
+
+            if (changePasswordSucceeded)
+            {
+                return RedirectToAction("ChangePasswordSuccess");
+            }
+
+            ModelState.AddModelError(String.Empty, "The current password is incorrect or the new password is invalid.");
+            return View(model);
+        }
+
+        public virtual ActionResult ChangePasswordSuccess()
+        {
+            return View();
+        }
+    }
+}

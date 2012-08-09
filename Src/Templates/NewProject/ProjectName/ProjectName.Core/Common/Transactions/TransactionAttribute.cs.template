@@ -1,0 +1,9 @@
+﻿using System;
+
+namespace @(Model.CoreNamespace).Common.Transactions
+{
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public class TransactionAttribute : Attribute
+    {
+    }
+}

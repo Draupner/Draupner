@@ -1,0 +1,20 @@
+﻿using System.Web.Mvc;
+using @(Model.WebNamespace).Common.NHibernate;
+using @(Model.WebNamespace).Common.Logging;
+
+namespace @(Model.WebNamespace).Common.Mvc
+{
+    public class FiltersConfiguration
+    {
+        public void Configure()
+        {
+            RegisterGlobalFilters(GlobalFilters.Filters);            
+        }
+
+        private void RegisterGlobalFilters(GlobalFilterCollection filters)
+        {
+            filters.Add(new NHibernateUnitOfWorkFilter());
+            filters.Add(new ElmahHandleErrorAttribute());
+        }
+    }
+}

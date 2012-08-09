@@ -1,0 +1,14 @@
+﻿using @(Model.CoreNamespace).Common.Persistence;
+using @(Model.CoreNamespace).Common.Persistence.NHibernate;
+using @(Model.CoreNamespace).Domain.Model;
+using @(Model.CoreNamespace).Domain.Repositories;
+
+namespace @(Model.CoreNamespace).Repositories
+{
+    public class @(Model.Entity.Name)Repository : GenericNHibernateRepository<@(Model.Entity.Name)>, I@(Model.Entity.Name)Repository
+    {
+        public @(Model.Entity.Name)Repository(IUnitOfWork unitOfWork) : base((NHibernateUnitOfWork) unitOfWork)
+        {
+        }
+    }
+}

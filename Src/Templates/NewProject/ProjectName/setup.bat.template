@@ -1,0 +1,8 @@
+@@ECHO OFF
+
+Rem It will setup your environment to use rake
+
+%cd%\Tools\7-Zip\7za.exe x %cd%\Tools\Ruby.7z -o%cd%\Tools
+%cd%\Tools\Setx\setx.exe PATH %PATH%;%cd%\Tools\Ruby\bin\
+
+

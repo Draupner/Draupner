@@ -1,0 +1,6 @@
+<Configuration>
+	<ProjectName>@(Model.ProjectName)</ProjectName>
+	<CoreNameSpace>@(Model.CoreNamespace)</CoreNameSpace>
+	<WebNameSpace>@(Model.WebNamespace)</WebNameSpace>
+	<TestNameSpace>@(Model.TestNamespace)</TestNameSpace>
+</Configuration>

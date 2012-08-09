@@ -1,0 +1,135 @@
+﻿using System;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Routing;
+using Rhino.Mocks;
+using @(Model.WebNamespace).Common.Security;
+using @(Model.WebNamespace).Controllers;
+using @(Model.WebNamespace).Models;
+using Xunit;
+
+namespace @(Model.TestNamespace).Controllers
+{
+    public class AccountControllerTests
+    {
+        private readonly AccountController accountController;
+        private readonly MockRepository mocks;
+        private readonly IAuthentication authenticationMock;
+        private HttpRequestBase requestMock;
+        private HttpResponseBase responseMock;
+        private HttpSessionStateBase sessionMock;
+        private HttpServerUtilityBase serverMock;
+        private HttpContextBase httpContextMock;
+
+        public AccountControllerTests()
+        {
+            mocks = new MockRepository();
+            authenticationMock = mocks.DynamicMock<IAuthentication>();
+
+            accountController = new AccountController(authenticationMock);
+            SetFakeControllerContext(accountController);
+        }
+
+        public void SetFakeControllerContext(Controller controller)
+        {
+            requestMock = mocks.PartialMock<HttpRequestBase>();
+            responseMock = mocks.PartialMock<HttpResponseBase>();
+            sessionMock = mocks.PartialMock<HttpSessionStateBase>();
+            serverMock = mocks.PartialMock<HttpServerUtilityBase>();
+            
+            httpContextMock = mocks.PartialMock<HttpContextBase>();
+
+            SetupResult.For(httpContextMock.Request).Return(requestMock);
+            SetupResult.For(httpContextMock.Response).Return(responseMock);
+            SetupResult.For(httpContextMock.Session).Return(sessionMock);
+            SetupResult.For(httpContextMock.Server).Return(serverMock);
+
+            var requestContext = new RequestContext(httpContextMock, new RouteData());
+            var controllerContext = new ControllerContext(requestContext, controller);
+            controller.ControllerContext = controllerContext;
+            
+            var routes = new RouteCollection();
+            routes.MapRoute("Default", "{controller}/{action}/{id}", new {controller = "Home", action = "Index", id = UrlParameter.Optional});
+
+            controller.Url = new UrlHelper(requestContext, routes);
+        }
+
+        [Fact]
+        public void ShouldShowLogOn()
+        {
+            var result = (ViewResult) accountController.LogOn();
+            Assert.Equal("", result.ViewName);
+        }
+
+        [Fact]
+        public void ShouldLogOn()
+        {
+            Expect.Call(authenticationMock.ValidateUser("rna", "123123")).Return(true);
+            Expect.Call(() => authenticationMock.LogOn("rna", false));
+
+            mocks.ReplayAll();
+
+            var logOnViewModel = new LogOnViewModel{UserName = "rna", Password = "123123", RememberMe = false};
+            var result = accountController.LogOn(logOnViewModel, "/return/url") as RedirectResult;
+
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+            Assert.Equal("/return/url", result.Url);
+        }
+
+        [Fact]
+        public void ShouldRedirectToHomeSinceReturnUrlIsInvalid()
+        {
+            Expect.Call(authenticationMock.ValidateUser("rna", "123123")).Return(true);
+            Expect.Call(() => authenticationMock.LogOn("rna", false));
+            Expect.Call(requestMock.Url).Return(new Uri("http://localhost"));
+
+            mocks.ReplayAll();
+
+            var logOnViewModel = new LogOnViewModel { UserName = "rna", Password = "123123", RememberMe = false };
+            var result = accountController.LogOn(logOnViewModel, "http://www.google.com") as RedirectToRouteResult;
+
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+            Assert.Equal("Home", result.RouteValues["controller"]);
+            Assert.Equal("Index", result.RouteValues["action"]);
+        }
+
+        [Fact]
+        public void ShouldNotLogOnSincePasswordAndUserNameIsWrong()
+        {
+            Expect.Call(authenticationMock.ValidateUser("rna", "123123")).Return(false);
+            Expect.Call(() => authenticationMock.LogOn("rna", false)).IgnoreArguments().Repeat.Never();
+
+            mocks.ReplayAll();
+
+            var logOnViewModel = new LogOnViewModel { UserName = "rna", Password = "123123", RememberMe = false };
+            var result = accountController.LogOn(logOnViewModel, "/return/url") as ViewResult;
+
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+            Assert.True(result.ViewData.ModelState.ContainsKey("PasswordIncorrect"));
+        }
+
+        [Fact]
+        public void ShouldShowLogOnSinceModelIsInvalid()
+        {
+            Expect.Call(() => authenticationMock.LogOn("rna", false)).IgnoreArguments().Repeat.Never();
+
+            mocks.ReplayAll();
+
+            var logOnViewModel = new LogOnViewModel { UserName = "rna", Password = "123123", RememberMe = false };
+            accountController.ModelState.AddModelError("PasswordMissing", "Password missing");
+            var result = accountController.LogOn(logOnViewModel, "/return/url") as ViewResult;
+
+            mocks.VerifyAll();
+
+            Assert.NotNull(result);
+            Assert.Equal("", result.ViewName);
+            Assert.True(result.ViewData.ModelState.ContainsKey("PasswordMissing"));
+        }
+    }
+}

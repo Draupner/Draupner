@@ -1,0 +1,13 @@
+﻿using @(Model.CoreNamespace).Domain.Model;
+
+namespace @(Model.WebNamespace).Common.Security
+{
+    public interface IAuthentication
+    {
+        bool ValidateUser(string userName, string password);
+        void LogOff();
+        void LogOn(string userName, bool rememberMe);
+        bool ChangePassword(string userName, string oldPassword, string newPassword);
+        User CurrentUser();
+    }
+}

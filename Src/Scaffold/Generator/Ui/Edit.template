@@ -1,0 +1,39 @@
+﻿@@model @(Model.WebNamespace).Models.@(Model.Entity.Name)ViewModel
+
+@@{
+    ViewBag.Title = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Edit</h2>
+
+<script src="@@Url.Content("~/Scripts/jquery.validate.min.js")" type="text/javascript"></script>
+<script src="@@Url.Content("~/Scripts/jquery.validate.unobtrusive.min.js")" type="text/javascript"></script>
+
+@@using (Html.BeginForm()) {
+    @@Html.ValidationSummary(false)
+    <fieldset>
+        <legend>@(Model.Entity.Name)</legend>
+
+        @@Html.HiddenFor(model => model.Id)
+
+	@foreach(var property in Model.Entity.BasicProperties) {
+	if(property.Name != "Id") {
+        <div class="editor-label">
+            @@Html.LabelFor(model => model.@property.Name)
+        </div>
+        <div class="editor-field">
+            @@Html.EditorFor(model => model.@property.Name)
+            @@Html.ValidationMessageFor(model => model.@property.Name)
+        </div>
+	}
+	}
+        <p>
+            <input type="submit" value="Save" />
+        </p>
+    </fieldset>
+}
+
+<div>
+    @@Html.ActionLink("Back to List", "Index")
+</div>

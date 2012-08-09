@@ -1,0 +1,56 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Castle.Core;
+using Castle.MicroKernel;
+using Castle.MicroKernel.ModelBuilder;
+
+namespace @(Model.CoreNamespace).Common.Transactions
+{
+    public class TransactionInterceptorContributer : IContributeComponentModelConstruction
+    {
+        public void ProcessModel(IKernel kernel, ComponentModel model)
+        {
+            var attributes = GetMethodBoundaryAttributes(model);
+
+            if (attributes.Count > 0)
+            {
+                model.Interceptors.Add(new InterceptorReference(typeof(TransactionInterceptor).Name));
+            }
+        }
+
+        private static List<Attribute> GetMethodBoundaryAttributes(ComponentModel model)
+        {
+            var attributes = new List<Attribute>();
+
+            attributes.AddRange(GetMethodLevelAttribute(model));
+
+            return attributes;
+        }
+
+        private static IEnumerable<Attribute> GetMethodLevelAttribute(ComponentModel model)
+        {
+            var attributes = new List<Attribute>();
+
+            foreach (MethodInfo methodInfo in model.Implementation.GetMethods())
+            {
+                var transactionAttributes = (Attribute[])methodInfo.GetCustomAttributes(typeof(TransactionAttribute), false);
+                ValidateTransactionAttribute(model, methodInfo, transactionAttributes);
+                attributes.AddRange(transactionAttributes);
+            }
+
+            return attributes;
+        }
+        
+		private static void ValidateTransactionAttribute(ComponentModel model, MethodInfo methodInfo,
+                                                         Attribute[] transactionAttributes)
+        {
+            if (transactionAttributes.Length > 0 && !methodInfo.IsVirtual)
+            {
+                throw new Exception("Transaction attribute is on non-virtual method: " + methodInfo.Name + " in class: " +
+                                    model.Implementation.Name + ". Transaction attributes must be on virtual methods!");
+            }
+        }		
+    }
+}

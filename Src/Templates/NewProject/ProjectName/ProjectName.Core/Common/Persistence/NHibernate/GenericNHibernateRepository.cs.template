@@ -1,0 +1,85 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using NHibernate;
+using NHibernate.Criterion;
+using NHibernate.Linq;
+
+namespace @(Model.CoreNamespace).Common.Persistence.NHibernate
+{
+    public abstract class GenericNHibernateRepository<T> where T : class
+    {
+        private readonly NHibernateUnitOfWork unitOfWork;
+        protected ISession Session { get { return unitOfWork.Session; } }
+
+        protected GenericNHibernateRepository(NHibernateUnitOfWork unitOfWork)
+        {
+            this.unitOfWork = unitOfWork;
+        }
+
+        public T Get(long id)
+        {
+            return Session.Get<T>(id);
+        }
+
+        public void Add(T entity)
+        {
+            Session.Save(entity);
+        }
+
+        public void Delete(T entity)
+        {
+            Session.Delete(entity);
+        }
+
+        public IList<T> FindAll()
+        {
+            return Session.QueryOver<T>().List();
+        }
+
+        public Page<T> FindPage(int pageNumber, int pageSize, string sortColumn, SortOrder sortOrder)
+        {
+            IQueryOver<T, T> queryOver = Session.QueryOver<T>();
+
+            var rowCountQuery = queryOver.ToRowCountQuery();
+            IEnumerable<T> list = queryOver.AddOrder(sortColumn, sortOrder).Take(pageSize).Skip((pageNumber - 1) * pageSize).Future();
+            int totalCount = rowCountQuery.FutureValue<int>().Value;
+
+            return new Page<T>(list, pageNumber, pageSize, totalCount);
+        }
+
+        public long CountAll()
+        {
+            return Session.QueryOver<T>().RowCount();
+        }
+
+		public T Get(Expression<Func<T, bool>> predicate)
+		{
+		  return Find(predicate).SingleOrDefault();
+		}
+
+		public IQueryable<T> Find()
+		{
+		  return Session.Query<T>();
+		}
+
+		public IQueryable<T> Find(Expression<Func<T, bool>> predicate)
+		{
+		  return Session.Query<T>().Where(predicate);
+		}
+    }
+
+    public static class QueryOverHelpers
+    {
+        public static IQueryOver<TRoot, TSubType> AddOrder<TRoot, TSubType>(this IQueryOver<TRoot, TSubType> root, string column, SortOrder sortOrder)
+        {
+            if(column != null)
+            {
+                root.UnderlyingCriteria.AddOrder(new Order(column, sortOrder == SortOrder.Ascending));                
+            }
+
+            return root;
+        }
+    } 
+}

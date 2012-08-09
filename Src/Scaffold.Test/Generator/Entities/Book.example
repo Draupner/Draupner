@@ -1,0 +1,7 @@
+﻿namespace Blah.Core.Domain.Model
+{
+    public class Book
+    {
+        public virtual long Id { get; set; }
+    }
+}

@@ -1,0 +1,9 @@
+﻿namespace @(Model.WebNamespace).Models
+{
+    public class @(Model.ListName)ViewModel
+    {
+		@foreach(var property in Model.Entity.BasicProperties) {
+		@:public @(property.TypeName) @(property.Name) { get; set; }
+		}
+    }
+}
