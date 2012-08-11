@@ -1,7 +1,22 @@
 Draupner
 ========
 
-Full stack scaffolding tool for ASP.NET MVC + NHibernate + Castle.Windsor web applications.
+Full stack scaffolding tool for ASP.NET MVC web applications. Applications built with Draupner uses the following list of libraries to create a full stack web app from databse to UI:
+
+ * ASP.NET MVC
+ * NHibernate
+ * FluentNHibernate
+ * Castle.Windsor
+ * AutoMapper
+ * Elmah
+
+And on the testing side Draupner application use:
+  
+  * xUnit.NET
+  * RhinoMocks
+  * AutoFixture
+  * SQLite
+
 Clone or browse the [companion sample](https://github.com/Draupner/DraupnerGeneratedSample) to get an idea of how an scaffolded with Draupner is structured. 
 
 
