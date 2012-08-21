@@ -1,0 +1,349 @@
+/*********************
+ General styling
+*********************/
+html
+{
+    margin: 0;
+    padding: 0;
+    background: none transparent scroll repeat 0 0;
+    overflow-y: scroll;
+}
+
+body
+{
+	font-family: "Trebuchet MS", Helvetica, Jamul, sans-serif;
+	font-size: 100.1%;
+	margin: 0 0 0 0;
+	padding: 0;
+	background-image: url("images/bg-gray.jpg");
+ 	background-repeat: repeat-x;
+    background-position: left top;
+    background-color: #fbfbfb;
+}
+ 
+h1
+{
+    font-size: 162%;
+    font-weight:normal;
+}
+
+h2
+{
+    font-size: 130%;
+    font-weight: normal;
+}
+
+.clear
+{
+	clear: both;
+	display: block;
+}
+
+/*********************
+ Page layout
+*********************/
+
+#pageWrapper
+{   
+	margin: 0;
+	margin-left: auto;
+	margin-right: auto;
+	width: 984px;
+	position: relative;
+	top: 0;
+	left: 0;
+	color: #3f403f;
+	overflow: hidden;	
+}
+
+.layoutOuter
+{
+	border: 0;
+	margin: 0;
+	padding-top: 0;
+	padding-right: 0;
+	padding-bottom: 0;
+	padding-left: 0;
+ 
+}
+
+.layoutInner
+{
+	width: 100%;
+	position: relative;
+	margin: 0;
+	background-color: #ffffff;
+    -moz-border-radius: 15px;
+    border-radius: 15px;
+    margin-top: 12px;
+}
+
+.content
+{
+    padding: 12px 12px 0 12px;
+}
+
+/*********************
+ Header 
+*********************/
+#header
+{
+    position: relative;
+    width: 100%;
+    height: 103px;
+    font-size: 0.69em;
+    margin: 0;
+    padding: 0;
+}
+
+#header ul li a
+{
+	color: #ffffff;
+}
+
+#header ul li a:hover
+{
+    color: #E59F24;
+}
+
+#header-logo
+{
+    position: absolute;
+    left: 35px;
+    top: 29px;
+	height: 45px;
+	background-color: transparent;
+	z-index: 10;
+}
+
+#header-logo a
+{
+	display: block;
+	overflow: hidden;
+	color: White;
+	text-decoration: none;
+	font-size: 40px;
+}
+
+/*********************
+ Menu 
+*********************/
+#menu
+{
+    font-size: 19px;
+    font-weight: bold;
+    position: absolute;
+    left: -10px;
+    bottom: 7px;
+    width: 100%;
+    text-align: left;
+}
+
+#menu ul
+{
+    float: right;
+    margin-right: 10px;
+}
+
+#menu li
+{
+    padding-top: 0; 
+    padding-right: 0;
+    padding-left: 22px;
+    padding-bottom: 0;
+    height: 1em;
+    line-height: 1em;
+    display: inline;
+}
+
+#menu li img
+{
+    position: relative;
+    top: 3px;
+    padding-right: 5px;
+    display: inline;
+}
+
+#menu ul
+{
+    list-style-type: none;
+    display: block;
+    margin: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+}
+
+/*********************
+ Footer 
+*********************/
+#footer
+{
+	margin-top: 5px;
+    padding-top: 0.7em;
+    padding-right: 12px;
+    padding-bottom: 25px;
+    padding-left: 12px;
+    text-align: center;
+	font-size: 69%;
+	color: #3f3f3f;
+}
+
+#footerLeft
+{
+ padding-left: 0.3em;
+ float: left;
+}
+
+/********************************************
+   Grid
+********************************************/ 
+.grid 
+{
+	width: 100%;
+	border: 1px solid #BBBBBB;
+    border-collapse: collapse;
+	margin-top: 10px;	
+	margin-bottom: 10px;	
+}
+
+.grid th {
+	height: 29px;
+	padding-left: 20px;
+	padding-right: 20px;
+	text-align: left;
+	border: 1px solid #BBBBBB;
+	border-left: 0px;
+	border-right: 0px;
+    background-color: #DADADA;
+}
+.grid th a
+{
+    color: #666
+}
+.grid tr {
+	height: 30px;
+}
+
+.grid td {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+.grid .sort_asc
+{
+    background-image: url('/content/images/sort_asc.gif');
+    background-repeat: no-repeat;
+    background-position: left;
+    padding-left: 20px;
+}
+
+.grid .sort_desc
+{
+    background-image: url('/content/images/sort_desc.gif');
+    background-repeat: no-repeat;
+    background-position: left;
+    padding-left: 20px;   
+}
+
+.grid .gridrow_alternate
+{
+    background-color: #EEEEEE;
+}
+
+.pagination
+{
+    border: 1px solid #BBBBBB;
+    padding: 5px;
+    background-color: #FBFBFB;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/********************************************
+   Links
+********************************************/ 
+a, a:visited {
+	text-decoration: none;
+	color: #2180BC;
+
+}
+a:hover {
+	color: 	#00008B;
+	text-decoration: underline;
+}
+
+/********************************************
+   Form
+********************************************/ 
+fieldset {
+    border: 1px solid #BBBBBB;
+    border-radius: 5px 5px 5px 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+.editor-field input {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #B5B2AE;
+    border-radius: 3px 3px 3px 3px;
+    font-size: 12px;
+    margin: 0 17px 0 0;
+    padding: 5px 10px;
+    position: relative;
+    width: 213px;
+}
+
+.editor-label {
+    margin-top: 10px;
+}
+
+/********************************************
+   Validation
+********************************************/ 
+.field-validation-error
+{
+    color: #D8000C;
+}
+
+.field-validation-valid
+{
+    display: none;
+}
+
+.input-validation-error
+{
+    border: 1px solid #D8000C;
+    background-color: #ffeeee;
+    padding: 8px;
+    font-style: italic;
+}
+
+.validation-summary-errors
+{
+    border: 1px solid;
+    margin: 10px 0px;
+    padding:15px 10px 15px 50px;
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    color: #D8000C;
+    background-color: #FFBABA;    
+}
+
+.validation-summary-valid
+{
+    display: none;
+}
+
+/********************************************
+   Details page
+********************************************/ 
+.display-label {
+    font-weight: bold;
+}
+
+.display-field {
+    margin-bottom: 15px;
+}

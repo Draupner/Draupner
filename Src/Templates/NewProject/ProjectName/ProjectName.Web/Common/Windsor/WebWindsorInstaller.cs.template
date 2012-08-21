@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using System;
+using System.Web.Mvc;
 using Castle.MicroKernel.Registration;
 using Castle.MicroKernel.SubSystems.Configuration;
 using Castle.Windsor;
@@ -13,9 +14,9 @@ namespace @(Model.WebNamespace).Common.Windsor
             container.Register(FindControllers().Configure(ConfigureControllers()));
         }
 
-        private static ConfigureDelegate ConfigureControllers()
+        private static Action<ComponentRegistration> ConfigureControllers()
         {
-            return c => c.LifeStyle.Transient;
+            return c => c.LifestyleTransient();
         }
 
         private static BasedOnDescriptor FindControllers()

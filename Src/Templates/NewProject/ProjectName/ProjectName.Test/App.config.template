@@ -5,8 +5,11 @@
     <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
       <dependentAssembly>
         <assemblyIdentity name="xunit.extensions" publicKeyToken="8d05b1bb7a6fdb6c"/>
-        <bindingRedirect oldVersion="1.6.1.1521" newVersion="1.8.0.1545"/>
+        <bindingRedirect oldVersion="1.6.1.1521" newVersion="1.9.1.1600"/>
       </dependentAssembly>
     </assemblyBinding>
   </runtime>
-</configuration>
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5" />
+  </startup>
+  </configuration>
