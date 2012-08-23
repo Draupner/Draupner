@@ -6,6 +6,7 @@ namespace @(Model.TestNamespace)
     {
         public void Customize(IFixture fixture)
         {
+            fixture.Customize(new MultipleCustomization());
         }
     }
 }

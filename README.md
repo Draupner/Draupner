@@ -70,11 +70,11 @@ The below steps assume that Draupner is in your path.
 
 	> scaffold.exe
 	
-3. To create, setup, build, and run tests for your first Draupner scaffolded project fire these commands:
+3. To create, setup, build, and run tests for your first Draupner scaffolded project fire these commands (skipping the setup.bat if you already have ruby set up):
 
-	> scaffold.exe create-project library
+	> scaffold.exe create-project Library
 	
-	> cd  library
+	> cd  Library
 	
 	> setup.bat
 	
@@ -84,10 +84,10 @@ The below steps assume that Draupner is in your path.
 	
 4. At this point you'll need to create a be used by the application. Assuming that you have SQL Server Express installed as .\SQLEXPRESS the database can be created by Draupner:
 
-	> scaffolo.exe create-database library
+	> scaffold.exe create-database Library
 	
-5. Now you have a basic mostly empty Draupner application. Open up the library.sln in Visual Studio and take a look around.
-6. Press F5 to run the application. Your browser should shoe a simple hello page.
+5. Now you have a basic mostly empty Draupner application. Open up the Library.sln in Visual Studio and take a look around.
+6. Press F5 to run the application. Your browser should shoe a simple hello page. =If you have trouble here, it may help to go into properties on the Library.Web project and switch from IIS to Visual Studio Development Server.
 7. To add the first enity to the application execute this in the console you opened earlier:
 
 	> scaffold.exe create-entity Book
@@ -127,7 +127,7 @@ The below steps assume that Draupner is in your path.
         	public virtual long Id { get; set; }
         	public virtual string Title { get; set; }
         	public virtual string ISBN { get; set; }
-        	public virtual IEnumerable<Author> Authors { get; set; }
+        	public virtual ICollection<Author> Authors { get; set; }
     	}
 
     	public class Author
@@ -140,11 +140,7 @@ The below steps assume that Draupner is in your path.
     	{
     		public virtual long Id { get; set; }
     		public virtual int Number { get; set; }
-    		public virtual IEnumerable<Book> Loans { get; set; }
-    		public LibraryCard()
-    		{
-        	    Loans = new List<Book>();
-        	}
+    		public virtual ICollection<Book> Loans { get; set; }
     	}
 
 17. To get CRUD functionality generated for these new entities and for the edited Book entity run the following in the console:
@@ -154,44 +150,12 @@ The below steps assume that Draupner is in your path.
 	> scaffold.exe create-crud Author
 	
 	> scaffold.exe create-crud LibraryCard
-	
-18. NB. Due to a limitation of Draupner we need to change the mapping code for the two IEnumerables in the enitites above from using a References mapping to a using a HasMany mapping. To do so edit the mapping classes in the ´library.Core.Common.NHibernate´ namespace to match the following:
 
-        public class BookMap : ClassMap<Book>
-        {
-                public BookMap()
-                {
-                        Id(x => x.Id);
-                        Map(x => x.Title);
-                        Map(x => x.ISBN);
-                        HasMany<Author>(x => x.Authors);
-                }
-        }
-	
-        public class AuthorMap : ClassMap<Author>
-    	{
-    		public AuthorMap()
-    		{
-    			Id(x => x.Id);
-    			Map(x => x.Name);
-	        }
-         }
-
-        public class LibraryCardMap : ClassMap<LibraryCard>
-        {
-        	public LibraryCardMap()
-        	{
-        		Id(x => x.Id);
-        		Map(x => x.Number);
-        		HasMany(x => x.Loans);
-        	}
-        }
-
-19. To ensure the above went well, rerun the tests (and notice the number of tests added by Draupner):
+18. To ensure the above went well, rerun the tests (and notice the number of tests added by Draupner):
 	
 	> rake test
 
-20. Now the only thing that remains is to F5 and play around
+19. Now the only thing that remains is to F5 and play around
 
 These steps should result in an application similar to the [Draupner companion sample](https://github.com/Draupner/DraupnerGeneratedSample).
 

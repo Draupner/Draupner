@@ -71,7 +71,7 @@
 
   <log4net configSource="Log4Net.config" />
 
-    <location path="elmah.axd" inheritInChildApplications="false">
+    <location path="elmah.axd" inheritInChildApplications="false" />
     <system.web>
       <httpHandlers>
         <add verb="POST,GET,HEAD" path="elmah.axd" type="Elmah.ErrorLogPageFactory, Elmah" />
