@@ -22,7 +22,7 @@ Clone or browse the [companion sample](https://github.com/Draupner/DraupnerGener
 
 Obtaining Draupner
 -------------------
-You can get Draunpner either by downloadin a precompiled bundle or building it from source.
+You can get Draunpner either by downloading a precompiled bundle or building it from source.
 
 
 ### Download Binary
@@ -59,7 +59,7 @@ and you're ready to go
 
 Getting Started
 ----------------
-NB. This getting starting section is very, very rough right now.
+NB. This getting starting section is still somewhat rough.
 
 This section walks you through creating very simple little application by taking advantage of Draupner.
 
@@ -87,7 +87,7 @@ The below steps assume that Draupner is in your path.
 	> scaffold.exe create-database Library
 	
 5. Now you have a basic mostly empty Draupner application. Open up the Library.sln in Visual Studio and take a look around.
-6. Press F5 to run the application. Your browser should shoe a simple hello page. =If you have trouble here, it may help to go into properties on the Library.Web project and switch from IIS to Visual Studio Development Server.
+6. Press F5 to run the application. Your browser should show a simple hello page. -If you have trouble here, it may help to go into properties on the Library.Web project and switch from IIS to Visual Studio Development Server.
 7. To add the first enity to the application execute this in the console you opened earlier:
 
 	> scaffold.exe create-entity Book
