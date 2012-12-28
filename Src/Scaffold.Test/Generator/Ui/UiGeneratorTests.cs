@@ -18,7 +18,7 @@ namespace Scaffold.Test.Generator.Ui
         private UiGenerator uiGenerator;
         private IConfiguration configurationMock;
         private IProjectFileManager projectFileManagerMock;
-        private IDepencyInjectionManager depencyInjectionManagerMock;
+        private IDependencyInjectionManager _dependencyInjectionManagerMock;
         private IFileSystem fileSystemMock;
         private IEntityManager entityManagerMock;
         private IAutoMapperHelper autoMapperHelperMock;
@@ -28,13 +28,13 @@ namespace Scaffold.Test.Generator.Ui
         {
             configurationMock = MockRepository.GenerateMock<IConfiguration>();
             projectFileManagerMock = MockRepository.GenerateMock<IProjectFileManager>();
-            depencyInjectionManagerMock = MockRepository.GenerateMock<IDepencyInjectionManager>();
+            _dependencyInjectionManagerMock = MockRepository.GenerateMock<IDependencyInjectionManager>();
             fileSystemMock = MockRepository.GenerateMock<IFileSystem>();
             entityManagerMock = MockRepository.GenerateMock<IEntityManager>();
             autoMapperHelperMock = MockRepository.GenerateMock<IAutoMapperHelper>();
 
             var templateEngine = new TemplateEngine(fileSystemMock);
-            uiGenerator = new UiGenerator(entityManagerMock, templateEngine, configurationMock, projectFileManagerMock, depencyInjectionManagerMock, autoMapperHelperMock, fileSystemMock);
+            uiGenerator = new UiGenerator(entityManagerMock, templateEngine, configurationMock, projectFileManagerMock, _dependencyInjectionManagerMock, autoMapperHelperMock, fileSystemMock);
         }
 
         [Test]
@@ -76,98 +76,98 @@ namespace Scaffold.Test.Generator.Ui
 
         private void VerifyGenerateController()
         {
-            const string genereatedFile = @"Controllers\BookController.cs";
+            const string generatedFile = @"Controllers\BookController.cs";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.BookController.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateViewModel()
         {
-            const string genereatedFile = @"Models\BookViewModel.cs";
+            const string generatedFile = @"Models\BookViewModel.cs";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.BookViewModel.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateIndexView()
         {
-            const string genereatedFile = @"Views\Book\Index.cshtml";
+            const string generatedFile = @"Views\Book\Index.cshtml";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.Index.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateCreateView()
         {
-            const string genereatedFile = @"Views\Book\Create.cshtml";
+            const string generatedFile = @"Views\Book\Create.cshtml";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.Create.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateDetailsView()
         {
-            const string genereatedFile = @"Views\Book\Details.cshtml";
+            const string generatedFile = @"Views\Book\Details.cshtml";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.Details.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateEditView()
         {
-            const string genereatedFile = @"Views\Book\Edit.cshtml";
+            const string generatedFile = @"Views\Book\Edit.cshtml";
             const string @namespace = "Blah.Web";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddContentFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.Edit.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateControllerTests()
         {
-            const string genereatedFile = @"Controllers\BookControllerTests.cs";
+            const string generatedFile = @"Controllers\BookControllerTests.cs";
             const string @namespace = "Blah.Test";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.BookControllerTests.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateAutoMapperTests()
         {
-            const string genereatedFile = @"Common\AutoMapper\BookAutoMapperTests.cs";
+            const string generatedFile = @"Common\AutoMapper\BookAutoMapperTests.cs";
             const string @namespace = "Blah.Test";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Ui.BookAutoMapperTests.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyAddToAutoMapper()

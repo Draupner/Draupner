@@ -14,7 +14,7 @@ namespace Scaffold.Generator.Repository
         private readonly ITemplateEngine templateEngine;
         private readonly IConfiguration configuration;
         private readonly IProjectFileManager projectFileManager;
-        private readonly IDepencyInjectionManager depencyInjectionManager;
+        private readonly IDependencyInjectionManager _dependencyInjectionManager;
 
         private const string command = "create-repository";
         private const string description = "\tusage: create-repository [entity]\n\tCreates a repository for an entity";
@@ -23,14 +23,14 @@ namespace Scaffold.Generator.Repository
             ITemplateEngine templateEngine, 
             IConfiguration configuration,
             IProjectFileManager projectFileManager,
-            IDepencyInjectionManager depencyInjectionManager)
+            IDependencyInjectionManager _dependencyInjectionManager)
             : base(command, description)
         {
             this.entityManager = entityManager;
             this.templateEngine = templateEngine;
             this.configuration = configuration;
             this.projectFileManager = projectFileManager;
-            this.depencyInjectionManager = depencyInjectionManager;
+            this._dependencyInjectionManager = _dependencyInjectionManager;
         }
 
         public override void Execute(List<string> args)
@@ -60,8 +60,8 @@ namespace Scaffold.Generator.Repository
             var repositoryImplementation = entity.Name + "Repository";
             var namespaces = new[]{configuration.CoreNameSpace + ".Domain.Repositories", configuration.CoreNameSpace + ".Repositories"};
 
-            depencyInjectionManager.AddToCoreDependencyInjection(repositoryInterface, repositoryImplementation, namespaces);
-            depencyInjectionManager.AddToDependencyInjectionTest(repositoryInterface, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
+            _dependencyInjectionManager.AddToCoreDependencyInjection(repositoryInterface, repositoryImplementation, namespaces);
+            _dependencyInjectionManager.AddToDependencyInjectionTest(repositoryInterface, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
         }
 
         private Entity ReadEntity(List<string> args)

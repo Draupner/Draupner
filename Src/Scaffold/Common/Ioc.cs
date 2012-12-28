@@ -50,7 +50,7 @@ namespace Scaffold.Common
             container.Register(Component.For<ITemplateEngine>().ImplementedBy<TemplateEngine>());
             container.Register(Component.For<IProjectFileManager>().ImplementedBy<ProjectFileManager>());
             container.Register(Component.For<IFileSystem>().ImplementedBy<FileSystem>());
-            container.Register(Component.For<IDepencyInjectionManager>().ImplementedBy<DepencyInjectionManager>());
+            container.Register(Component.For<IDependencyInjectionManager>().ImplementedBy<DependencyInjectionManager>());
             container.Register(Component.For<IAutoMapperHelper>().ImplementedBy<AutoMapperHelper>());
             container.Register(Component.For<IWebConfigHelper>().ImplementedBy<WebConfigHelper>());
 

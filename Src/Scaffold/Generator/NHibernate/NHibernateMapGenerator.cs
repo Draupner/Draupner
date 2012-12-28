@@ -18,7 +18,7 @@ namespace Scaffold.Generator.NHibernate
         private readonly IFileSystem fileSystem;
 
         private const string command = "create-nhibernate-mapping";
-        private const string description = "\tusage: create-nhibernate-mapping [entity]\n\tCreates NHibernate mappings for an entity";
+        private const string description = "\tusage: create-nhibernate-mapping [entity]\n\tCreates Fluent NHibernate mappings for an entity";
 
         public NHibernateMapGenerator(IEntityManager entityManager,
                                       ITemplateEngine templateEngine,

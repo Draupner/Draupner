@@ -27,20 +27,24 @@ namespace Scaffold
                 var generatorArgs = args.Skip(1).ToList();
 
                 generatorManager.ExecuteGenerator(command, generatorArgs);
-            } catch(EntityNotFoundException e)
+            } 
+            catch(EntityNotFoundException e)
             {
                 Console.WriteLine(e.Message);
-            } catch(GeneratorNotFoundException e)
+            } 
+            catch(GeneratorNotFoundException e)
             {
                 Console.WriteLine(e.Message);
             }
             catch (ConfigurationFileNotFoundException e)
             {
                 Console.WriteLine(e.Message + ". Are you sure this is a scaffolded project?");
-            } catch(EntityParsingException e)
+            } 
+            catch(EntityParsingException e)
             {
                 Console.WriteLine("Error parsing exception: " + e.Message);                
-            } catch(IllegalGeneratorArgs e)
+            } 
+            catch(IllegalGeneratorArgs e)
             {
                 Console.WriteLine("Incorrect number of arguments");
                 Console.WriteLine(e.Message);

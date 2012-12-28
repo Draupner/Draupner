@@ -20,7 +20,7 @@ namespace Scaffold.Generator.Form
         private readonly IAutoMapperHelper autoMapperHelper;
 
         private const string command = "create-ui-form";
-        private const string description = "\tusage: create-ui-form [entity] [form name]\n\tCreates an UI form for an entity";
+        private const string description = "\tusage: create-ui-form [entity] [form name]\n\tCreates a UI form for an entity";
 
         public FormGenerator(IEntityManager entityManager, IConfiguration configuration, ITemplateEngine templateEngine, IProjectFileManager projectFileManager, IFileSystem fileSystem, IAutoMapperHelper autoMapperHelper) : base(command, description)
         {

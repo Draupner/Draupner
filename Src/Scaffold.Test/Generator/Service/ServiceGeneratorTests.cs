@@ -17,7 +17,7 @@ namespace Scaffold.Test.Generator.Service
         private ServiceGenerator serviceGenerator;
         private IConfiguration configurationMock;
         private IProjectFileManager projectFileManagerMock;
-        private IDepencyInjectionManager depencyInjectionManagerMock;
+        private IDependencyInjectionManager _dependencyInjectionManagerMock;
         private IFileSystem fileSystemMock;
 
         [SetUp]
@@ -25,11 +25,11 @@ namespace Scaffold.Test.Generator.Service
         {
             configurationMock = MockRepository.GenerateMock<IConfiguration>();
             projectFileManagerMock = MockRepository.GenerateMock<IProjectFileManager>();
-            depencyInjectionManagerMock = MockRepository.GenerateMock<IDepencyInjectionManager>();
+            _dependencyInjectionManagerMock = MockRepository.GenerateMock<IDependencyInjectionManager>();
             fileSystemMock = MockRepository.GenerateMock<IFileSystem>();
 
             var templateEngine = new TemplateEngine(fileSystemMock);
-            serviceGenerator = new ServiceGenerator(templateEngine, configurationMock, projectFileManagerMock, depencyInjectionManagerMock);
+            serviceGenerator = new ServiceGenerator(templateEngine, configurationMock, projectFileManagerMock, _dependencyInjectionManagerMock);
         }
 
         [Test]
@@ -48,43 +48,43 @@ namespace Scaffold.Test.Generator.Service
 
         private void VerifyAddToDependencyInjecttion()
         {
-            depencyInjectionManagerMock.AssertWasCalled(x => x.AddToCoreDependencyInjection("IMailService", "MailService", new[] { "Blah.Core.Services", "Blah.Core.Services.Impl" }));
-            depencyInjectionManagerMock.AssertWasCalled(x => x.AddToDependencyInjectionTest("IMailService", new[] { "Blah.Core.Services" }));
+            _dependencyInjectionManagerMock.AssertWasCalled(x => x.AddToCoreDependencyInjection("IMailService", "MailService", new[] { "Blah.Core.Services", "Blah.Core.Services.Impl" }));
+            _dependencyInjectionManagerMock.AssertWasCalled(x => x.AddToDependencyInjectionTest("IMailService", new[] { "Blah.Core.Services" }));
         }
 
         private void VerifyGenerateService()
         {
-            const string genereatedFile = @"Services\Impl\MailService.cs";
+            const string generatedFile = @"Services\Impl\MailService.cs";
             const string @namespace = "Blah.Core";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Service.MailService.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
         private void VerifyGenerateServiceInterface()
         {
-            const string genereatedFile = @"Services\IMailService.cs";
+            const string generatedFile = @"Services\IMailService.cs";
             const string @namespace = "Blah.Core";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Service.IMailService.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateServiceTests()
         {
-            const string genereatedFile = @"Services\MailServiceTests.cs";
+            const string generatedFile = @"Services\MailServiceTests.cs";
             const string @namespace = "Blah.Test";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Service.MailServiceTests.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private string GetGeneratedFile(string fileName)

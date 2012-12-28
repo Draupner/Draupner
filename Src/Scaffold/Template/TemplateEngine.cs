@@ -49,7 +49,7 @@ namespace Scaffold.Template
             }
         }
 
-        public string ReadTemplate(string templateName)
+        private string ReadTemplate(string templateName)
         {
             Assembly assembly = GetType().Assembly;
             var templateStream = assembly.GetManifestResourceStream(templateName);

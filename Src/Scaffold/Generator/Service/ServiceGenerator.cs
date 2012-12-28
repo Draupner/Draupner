@@ -13,20 +13,20 @@ namespace Scaffold.Generator.Service
         private readonly ITemplateEngine templateEngine;
         private readonly IConfiguration configuration;
         private readonly IProjectFileManager projectFileManager;
-        private readonly IDepencyInjectionManager depencyInjectionManager;
+        private readonly IDependencyInjectionManager _dependencyInjectionManager;
 
         private const string command = "create-service";
         private const string description = "\tusage: create-service [service name]\n\tCreates a new service";
 
         public ServiceGenerator(ITemplateEngine templateEngine, 
             IConfiguration configuration,
-            IProjectFileManager projectFileManager, IDepencyInjectionManager depencyInjectionManager)
+            IProjectFileManager projectFileManager, IDependencyInjectionManager _dependencyInjectionManager)
             : base(command, description)
         {
             this.templateEngine = templateEngine;
             this.configuration = configuration;
             this.projectFileManager = projectFileManager;
-            this.depencyInjectionManager = depencyInjectionManager;
+            this._dependencyInjectionManager = _dependencyInjectionManager;
         }
 
         public override void Execute(List<string> args)
@@ -56,8 +56,8 @@ namespace Scaffold.Generator.Service
             var serviceImplementation = serviceName;
             var namespaces = new[] { configuration.CoreNameSpace + ".Services", configuration.CoreNameSpace + ".Services.Impl" };
 
-            depencyInjectionManager.AddToCoreDependencyInjection(serviceInterface, serviceImplementation, namespaces);
-            depencyInjectionManager.AddToDependencyInjectionTest(serviceInterface, new[] { configuration.CoreNameSpace + ".Services" });
+            _dependencyInjectionManager.AddToCoreDependencyInjection(serviceInterface, serviceImplementation, namespaces);
+            _dependencyInjectionManager.AddToDependencyInjectionTest(serviceInterface, new[] { configuration.CoreNameSpace + ".Services" });
         }
 
         private void GenerateServiceInterface(string serviceName)

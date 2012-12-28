@@ -28,15 +28,15 @@ namespace Scaffold.Test.Entities
         public void ShouldReadEntity()
         {
             const string entitySourceCode = @"namespace Foo.Core.Domain.Model
-{
-    public class Person
-    {
-        public virtual long Id { get; set; }
-        public virtual string Name { get; set; }
-        public virtual ICollection<Role> Roles { get; set; }
-        public virtual Role CurrentRole { get; set; }
-    }
-}";
+                                                {
+                                                    public class Person
+                                                    {
+                                                        public virtual long Id { get; set; }
+                                                        public virtual string Name { get; set; }
+                                                        public virtual ICollection<Role> Roles { get; set; }
+                                                        public virtual Role CurrentRole { get; set; }
+                                                    }
+                                                }";
             const string path = "\\Foo.Core\\Domain\\Model\\Person.cs";
 
             Expect.Call(fileSystemMock.FileExists(path)).Return(true);
@@ -67,15 +67,15 @@ namespace Scaffold.Test.Entities
         public void ShouldThrowWhenParsingEntityFails()
         {
             const string entitySourceCode = @"namespace Foo.Core.Domain.Model
-{
-    public class
-    {
-        public virtual long Id { get; set; }
-        public virtual string Name { get; set; }
-        public virtual ICollection<Role> Roles { get; set; }
-        public virtual Role CurrentRole { get; set; }
-    }
-}";
+                                                {
+                                                    public class
+                                                    {
+                                                        public virtual long Id { get; set; }
+                                                        public virtual string Name { get; set; }
+                                                        public virtual ICollection<Role> Roles { get; set; }
+                                                        public virtual Role CurrentRole { get; set; }
+                                                    }
+                                                }";
             const string path = "\\Foo.Core\\Domain\\Model\\Person.cs";
 
             Expect.Call(fileSystemMock.FileExists(path)).Return(true);
