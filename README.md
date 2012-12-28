@@ -1,34 +1,35 @@
 Draupner
 ========
 
-Full stack scaffolding tool for ASP.NET MVC web applications. Applications built with Draupner uses the following list of libraries to create a full stack web app from databse to UI:
+Full stack scaffolding tool for ASP.NET MVC web applications. Applications built with Draupner use the following list of libraries to create a full stack web app from database to UI:
 
  * ASP.NET MVC
  * NHibernate
  * FluentNHibernate
  * Castle.Windsor
+ * Log4Net
  * AutoMapper
  * Elmah
 
-And on the testing side Draupner application use:
+And on the testing side Draupner applications use:
   
   * xUnit.NET
   * RhinoMocks
   * AutoFixture
   * SQLite
 
-Clone or browse the [companion sample](https://github.com/Draupner/DraupnerGeneratedSample) to get an idea of how an scaffolded with Draupner is structured. 
+Clone or browse the [companion sample](https://github.com/Draupner/DraupnerGeneratedSample) to get an idea of how a project scaffolded with Draupner is structured. 
 
 
 Obtaining Draupner
 -------------------
-You can get Draunpner either by downloading a precompiled bundle or building it from source.
+You can get Draupner either by downloading a precompiled bundle or building it from source.
 
 
 ### Download Binary
-1. Goto the [downloads page](https://github.com/Draupner/Draupner/downloads) and download the latests .zip.
-2. Unblock and unzip the file to whereever you want 
-3. Setup a "scaffolo_home" environment variable to point to where you unzipped Draupner to
+1. Goto the [downloads page](https://github.com/Draupner/Draupner/downloads) and download the latest .zip.
+2. Unblock and unzip the file to wherever you want 
+3. Setup a "scaffold_home" environment variable to point to where you unzipped Draupner to
 4. Consider adding that same folder to your PATH
 
 and you're ready to go
@@ -61,7 +62,7 @@ Getting Started
 ----------------
 NB. This getting starting section is still somewhat rough.
 
-This section walks you through creating very simple little application by taking advantage of Draupner.
+This section walks you through creating a very simple little application by taking advantage of Draupner.
 
 The below steps assume that Draupner is in your path.
 
@@ -82,7 +83,7 @@ The below steps assume that Draupner is in your path.
 	
 	> rake test
 	
-4. At this point you'll need to create a be used by the application. Assuming that you have SQL Server Express installed as .\SQLEXPRESS the database can be created by Draupner:
+4. At this point you'll need to create a database to be used by the application. Assuming that you have SQL Server Express installed as .\SQLEXPRESS the database can be created by Draupner:
 
 	> scaffold.exe create-database Library
 	
@@ -92,7 +93,7 @@ The below steps assume that Draupner is in your path.
 
 	> scaffold.exe create-entity Book
 	
-8. Got back to Visual Studio and say yes to reloading. Draupner has created a new file for you: library.Core/Domain/Model/Book.cs, which does not contain much - just an Id field.
+8. Go back to Visual Studio and say yes to reloading. Draupner has created a new file for you: library.Core/Domain/Model/Book.cs, which does not contain much - just an Id field.
 9. Edit the `Book` class to: 
 
         public class Book
@@ -103,18 +104,18 @@ The below steps assume that Draupner is in your path.
         	public virtual string Authors { get; set; }
     	}
 
-10. Now run the following command in the console to generate NHibernate mappings and CRUD views for the `Book` enity as registering `Book` and all associated classes with Castle.Windoser and setting up necesarry AutoMapper configuration:
+10. Now run the following command in the console to generate NHibernate mappings and CRUD views for the `Book` entity as registering `Book` and all associated classes with Castle.Windser and setting up necesarry AutoMapper configuration:
 
 	> scaffold.exe create-crud Book
 	
-11. The above command not only scaffold the CRUD operations from UI to DB, but also adds appropriate tests for the generated code. Let's run the new tests:
+11. The above command not only scaffolds the CRUD operations from UI to DB, but also adds appropriate tests for the generated code. Let's run the new tests:
 
 	> rake test
 	
 12. Go back to Visual Studio, reload and review the changes.
 13. Press F5 to rerun. Now there is a Book link on the front page, that leads into the CRUD pages for Book. Go on, create a few books.
-14. Goto SQL Managment studio inspect library database to get some more feel for what's going on.
-15. To make this slightly more interesting let's add a couple of entities more:
+14. Goto SQL Managment Studio inspect library database to get some more feel for what's going on.
+15. To make this slightly more interesting let's add a couple more entities:
 
 	> scaffold.exe create-entity Author
 	
@@ -162,7 +163,7 @@ These steps should result in an application similar to the [Draupner companion s
 Contributing
 -------------
 We welcome pull reqs!
-To make it easy for us to review and (hopefully) accept your pull request please follow the worflow described [here](https://github.com/NancyFx/Nancy/wiki/Git-Workflow) - except refer to Draupner instead of Nancy.
+To make it easy for us to review and (hopefully) accept your pull request please follow the workflow described [here](https://github.com/NancyFx/Nancy/wiki/Git-Workflow) - except refer to Draupner instead of Nancy.
 
 Copyright
 ---------

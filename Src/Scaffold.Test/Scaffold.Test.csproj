@@ -62,7 +62,7 @@
     <Compile Include="Generator\Form\FormGeneratorTests.cs" />
     <Compile Include="Generator\GeneratorManagerTests.cs" />
     <Compile Include="Generator\Helper\AutoMapperHelperTests.cs" />
-    <Compile Include="Generator\Helper\DepencyInjectionManagerTests.cs" />
+    <Compile Include="Generator\Helper\DependencyInjectionManagerTests.cs" />
     <Compile Include="Generator\Helper\FileMergerTests.cs" />
     <Compile Include="Generator\List\ListGeneratorTests.cs" />
     <Compile Include="Generator\NHibernate\NHibernateMapGeneratorTests.cs" />

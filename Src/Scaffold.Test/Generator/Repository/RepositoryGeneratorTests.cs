@@ -21,7 +21,7 @@ namespace Scaffold.Test.Generator.Repository
         private ITemplateEngine templateEngineMock;
         private IConfiguration configurationMock;
         private IProjectFileManager projectFileManagerMock;
-        private IDepencyInjectionManager depencyInjectionManagerMock;
+        private IDependencyInjectionManager _dependencyInjectionManagerMock;
         private IFileSystem fileSystemMock;
 
         [SetUp]
@@ -30,12 +30,12 @@ namespace Scaffold.Test.Generator.Repository
             entityManagerMock = MockRepository.GenerateMock<IEntityManager>();
             configurationMock = MockRepository.GenerateMock<IConfiguration>();
             projectFileManagerMock = MockRepository.GenerateMock<IProjectFileManager>();
-            depencyInjectionManagerMock = MockRepository.GenerateMock<IDepencyInjectionManager>();
+            _dependencyInjectionManagerMock = MockRepository.GenerateMock<IDependencyInjectionManager>();
             fileSystemMock = MockRepository.GenerateMock<IFileSystem>();
 
             templateEngineMock = new TemplateEngine(fileSystemMock);
 
-            repositoryGenerator = new RepositoryGenerator(entityManagerMock, templateEngineMock, configurationMock, projectFileManagerMock, depencyInjectionManagerMock);
+            repositoryGenerator = new RepositoryGenerator(entityManagerMock, templateEngineMock, configurationMock, projectFileManagerMock, _dependencyInjectionManagerMock);
         }
 
         [Test]
@@ -65,38 +65,38 @@ namespace Scaffold.Test.Generator.Repository
 
         private void VerifyGenerateRepository()
         {
-            const string genereatedFile = @"Repositories\BookRepository.cs";
+            const string generatedFile = @"Repositories\BookRepository.cs";
             const string @namespace = "Blah.Core";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Repository.BookRepository.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateRepositoryTests()
         {
-            const string genereatedFile = @"Repositories\BookRepositoryTests.cs";
+            const string generatedFile = @"Repositories\BookRepositoryTests.cs";
             const string @namespace = "Blah.Test";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Repository.BookRepositoryTests.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private void VerifyGenerateRepositoryInterface()
         {
-            const string genereatedFile = @"Domain\Repositories\IBookRepository.cs";
+            const string generatedFile = @"Domain\Repositories\IBookRepository.cs";
             const string @namespace = "Blah.Core";
 
-            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(genereatedFile, @namespace));
-            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + genereatedFile), Arg<string>.Is.Anything));
+            projectFileManagerMock.AssertWasCalled(x => x.AddCompileFileToProject(generatedFile, @namespace));
+            fileSystemMock.AssertWasCalled(x => x.FileWriteText(Arg<string>.Is.Equal(@namespace + @"\" + generatedFile), Arg<string>.Is.Anything));
 
             string expected = EmbeddedResourceReader.ReadEmbeddedResource("Scaffold.Test.Generator.Repository.IBookRepository.example");
-            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + genereatedFile));
+            Assert.AreEqual(expected, GetGeneratedFile(@namespace + @"\" + generatedFile));
         }
 
         private string GetGeneratedFile(string fileName)

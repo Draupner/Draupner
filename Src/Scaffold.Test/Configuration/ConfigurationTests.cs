@@ -28,11 +28,11 @@ namespace Scaffold.Test.Configuration
         public void ShouldReadConfiguration()
         {
             const string configurationFile = @"<Configuration>
-	<CoreNameSpace>Foo.Core</CoreNameSpace>
-	<WebNameSpace>Foo.Web</WebNameSpace>
-	<TestNameSpace>Foo.Test</TestNameSpace>
-	<ProjectName>Foo</ProjectName>
-</Configuration>";
+	                                                <CoreNameSpace>Foo.Core</CoreNameSpace>
+	                                                <WebNameSpace>Foo.Web</WebNameSpace>
+	                                                <TestNameSpace>Foo.Test</TestNameSpace>
+	                                                <ProjectName>Foo</ProjectName>
+                                                </Configuration>";
 
             Expect.Call(fileSystemMock.FileExists("Scaffold.xml")).Return(true);
             Expect.Call(fileSystemMock.FileTextStream("Scaffold.xml")).Return(new StringReader(configurationFile));

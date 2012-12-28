@@ -91,7 +91,7 @@ namespace Scaffold.Entities
 
         public override object VisitTypeDeclaration(TypeDeclaration typeDeclaration, object data)
         {
-            base.VisitTypeDeclaration(typeDeclaration, data); // visit methods                  
+            base.VisitTypeDeclaration(typeDeclaration, data); // visit types                  
             Types.Add(new AstValue<TypeDeclaration>(typeDeclaration.Name, typeDeclaration, typeDeclaration.StartLocation, typeDeclaration.EndLocation));
             return null;
         }
@@ -105,14 +105,14 @@ namespace Scaffold.Entities
 
         public override object VisitFieldDeclaration(FieldDeclaration fieldDeclaration, object data)
         {
-            base.VisitFieldDeclaration(fieldDeclaration, data); // visit methods
+            base.VisitFieldDeclaration(fieldDeclaration, data); // visit fields
             foreach (var field in fieldDeclaration.Fields)
                 Fields.Add(new AstValue<FieldDeclaration>(field.Name, fieldDeclaration, fieldDeclaration.StartLocation, fieldDeclaration.EndLocation));
             return null;
         }
         public override object VisitPropertyDeclaration(PropertyDeclaration propertyDeclaration, object data)
         {
-            base.VisitPropertyDeclaration(propertyDeclaration, data); // visit methods
+            base.VisitPropertyDeclaration(propertyDeclaration, data); // visit properties
             Properties.Add(new AstValue<PropertyDeclaration>(propertyDeclaration.Name, propertyDeclaration, propertyDeclaration.BodyStart, propertyDeclaration.BodyEnd));
             return null;
         }

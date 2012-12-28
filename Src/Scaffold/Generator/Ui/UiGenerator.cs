@@ -16,7 +16,7 @@ namespace Scaffold.Generator.Ui
         private readonly ITemplateEngine templateEngine;
         private readonly IConfiguration configuration;
         private readonly IProjectFileManager projectFileManager;
-        private readonly IDepencyInjectionManager depencyInjectionManager;
+        private readonly IDependencyInjectionManager _dependencyInjectionManager;
         private readonly IAutoMapperHelper autoMapperHelper;
         private readonly IFileSystem fileSystem;
 
@@ -27,7 +27,7 @@ namespace Scaffold.Generator.Ui
             ITemplateEngine templateEngine, 
             IConfiguration configuration,
             IProjectFileManager projectFileManager, 
-            IDepencyInjectionManager depencyInjectionManager,
+            IDependencyInjectionManager _dependencyInjectionManager,
             IAutoMapperHelper autoMapperHelper,
             IFileSystem fileSystem)
             : base(command, description)
@@ -36,7 +36,7 @@ namespace Scaffold.Generator.Ui
             this.templateEngine = templateEngine;
             this.configuration = configuration;
             this.projectFileManager = projectFileManager;
-            this.depencyInjectionManager = depencyInjectionManager;
+            this._dependencyInjectionManager = _dependencyInjectionManager;
             this.autoMapperHelper = autoMapperHelper;
             this.fileSystem = fileSystem;
         }
@@ -178,7 +178,7 @@ namespace Scaffold.Generator.Ui
             templateEngine.GenerateFromTemplate(template, configuration.WebNameSpace + "\\" + generatedFile, templateData);
 
             projectFileManager.AddCompileFileToProject(generatedFile, configuration.WebNameSpace);
-            depencyInjectionManager.AddToDependencyInjectionTest(controllerName, new[] { configuration.WebNameSpace + ".Controllers" });
+            _dependencyInjectionManager.AddToDependencyInjectionTest(controllerName, new[] { configuration.WebNameSpace + ".Controllers" });
         }
 
         private void GenerateControllerTest(Entity entity)

@@ -86,10 +86,10 @@
     <Compile Include="Generator\Form\FormGenerator.cs" />
     <Compile Include="Generator\GeneratorManager.cs" />
     <Compile Include="Generator\Helpers\AutoMapperHelper.cs" />
-    <Compile Include="Generator\Helpers\DepencyInjectionManager.cs" />
+    <Compile Include="Generator\Helpers\DependencyInjectionManager.cs" />
     <Compile Include="Generator\Helpers\FileMerger.cs" />
     <Compile Include="Generator\Helpers\IAutoMapperHelper.cs" />
-    <Compile Include="Generator\Helpers\IDepencyInjectionManager.cs" />
+    <Compile Include="Generator\Helpers\IDependencyInjectionManager.cs" />
     <Compile Include="Generator\IGenerator.cs" />
     <Compile Include="Generator\IGeneratorManager.cs" />
     <Compile Include="Generator\List\ListGenerator.cs" />

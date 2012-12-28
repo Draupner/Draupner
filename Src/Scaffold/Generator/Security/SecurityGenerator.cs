@@ -12,19 +12,19 @@ namespace Scaffold.Generator.Security
         private readonly IConfiguration configuration;
         private readonly ITemplateEngine templateEngine;
         private readonly IProjectFileManager projectFileManager;
-        private readonly IDepencyInjectionManager depencyInjectionManager;
+        private readonly IDependencyInjectionManager _dependencyInjectionManager;
         private readonly IFileSystem fileSystem;
         private readonly IWebConfigHelper webConfigHelper;
 
         private const string command = "create-authentication";
         private const string description = "\tusage: create-authentication\n\tCreates authentication";
 
-        public SecurityGenerator(IConfiguration configuration, ITemplateEngine templateEngine, IProjectFileManager projectFileManager, IDepencyInjectionManager depencyInjectionManager, IFileSystem fileSystem, IWebConfigHelper webConfigHelper) : base(command, description)
+        public SecurityGenerator(IConfiguration configuration, ITemplateEngine templateEngine, IProjectFileManager projectFileManager, IDependencyInjectionManager _dependencyInjectionManager, IFileSystem fileSystem, IWebConfigHelper webConfigHelper) : base(command, description)
         {
             this.configuration = configuration;
             this.templateEngine = templateEngine;
             this.projectFileManager = projectFileManager;
-            this.depencyInjectionManager = depencyInjectionManager;
+            this._dependencyInjectionManager = _dependencyInjectionManager;
             this.fileSystem = fileSystem;
             this.webConfigHelper = webConfigHelper;
         }
@@ -422,8 +422,8 @@ namespace Scaffold.Generator.Security
             const string implementationName = "Authentication";
             var namespaces = new[] { configuration.WebNameSpace + ".Common.Security" };
 
-            depencyInjectionManager.AddToWebDependencyInjection(interfaceName, implementationName, namespaces);
-            depencyInjectionManager.AddToDependencyInjectionTest(interfaceName, namespaces);
+            _dependencyInjectionManager.AddToWebDependencyInjection(interfaceName, implementationName, namespaces);
+            _dependencyInjectionManager.AddToDependencyInjectionTest(interfaceName, namespaces);
         }
 
         private void AddUserRepositoryToDependencyInjection()
@@ -431,8 +431,8 @@ namespace Scaffold.Generator.Security
             const string interfaceName = "IUserRepository";
             const string implementationName = "UserRepository";
 
-            depencyInjectionManager.AddToCoreDependencyInjection(interfaceName, implementationName, new[] { configuration.CoreNameSpace + ".Repositories", configuration.CoreNameSpace + ".Domain.Repositories" });
-            depencyInjectionManager.AddToDependencyInjectionTest(interfaceName, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
+            _dependencyInjectionManager.AddToCoreDependencyInjection(interfaceName, implementationName, new[] { configuration.CoreNameSpace + ".Repositories", configuration.CoreNameSpace + ".Domain.Repositories" });
+            _dependencyInjectionManager.AddToDependencyInjectionTest(interfaceName, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
         }
 
         private void AddRoleRepositoryToDependencyInjection()
@@ -440,8 +440,8 @@ namespace Scaffold.Generator.Security
             const string interfaceName = "IRoleRepository";
             const string implementationName = "RoleRepository";
 
-            depencyInjectionManager.AddToCoreDependencyInjection(interfaceName, implementationName, new[] { configuration.CoreNameSpace + ".Repositories", configuration.CoreNameSpace + ".Domain.Repositories" });
-            depencyInjectionManager.AddToDependencyInjectionTest(interfaceName, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
+            _dependencyInjectionManager.AddToCoreDependencyInjection(interfaceName, implementationName, new[] { configuration.CoreNameSpace + ".Repositories", configuration.CoreNameSpace + ".Domain.Repositories" });
+            _dependencyInjectionManager.AddToDependencyInjectionTest(interfaceName, new[] { configuration.CoreNameSpace + ".Domain.Repositories" });
         }
     }
 }

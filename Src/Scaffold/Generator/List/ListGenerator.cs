@@ -18,7 +18,7 @@ namespace Scaffold.Generator.List
         private readonly IProjectFileManager projectFileManager;
         private readonly IFileSystem fileSystem;
         private const string command = "create-ui-list";
-        private const string description = "\tusage: create-ui-list [entity] [list name]\n\tCreates an UI list for an entity";
+        private const string description = "\tusage: create-ui-list [entity] [list name]\n\tCreates a UI list for an entity";
 
         public ListGenerator(IEntityManager entityManager, IConfiguration configuration, ITemplateEngine templateEngine, IProjectFileManager projectFileManager, IFileSystem fileSystem)
             : base(command, description)
